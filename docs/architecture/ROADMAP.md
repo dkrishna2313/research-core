@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC0
+**Version:** RC1
 
 ---
 
@@ -18,7 +18,7 @@ The following rules govern phase ordering and are non-negotiable:
 
 ---
 
-## RC0 — Product and Architecture Foundation
+## RC0 — Product and Architecture Foundation ✓ COMPLETE
 
 ### Objective
 
@@ -71,7 +71,7 @@ All acceptance criteria are met and the final commit exists on `feature/rc0-prod
 
 ---
 
-## RC1 — Core Contracts and Package Boundary
+## RC1 — Core Contracts and Package Boundary ✓ COMPLETE
 
 ### Objective
 

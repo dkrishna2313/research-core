@@ -52,7 +52,9 @@ PROHIBITED_RUNTIME_IMPORTS = [
     "research_agent.cli",
 ]
 
-# Modules that must NOT exist in the source package (premature implementation)
+# Modules that must NOT exist in the source package (premature implementation).
+# research_core.contracts and research_core.protocols are intentional RC1 deliverables
+# and are no longer in this list.
 PREMATURE_IMPLEMENTATION_MODULES = [
     "research_core.engine",
     "research_core.synthesis",
@@ -60,8 +62,13 @@ PREMATURE_IMPLEMENTATION_MODULES = [
     "research_core.analysis",
     "research_core.renderers",
     "research_core.cli",
+]
+
+# Modules that MUST exist as of RC1.
+RC1_REQUIRED_MODULES = [
     "research_core.contracts",
     "research_core.protocols",
+    "research_core.exceptions",
 ]
 
 
@@ -220,9 +227,12 @@ class TestNoPrematureImplementation:
                 f"Premature implementation found: {as_module}"
             )
 
-    def test_only_init_in_research_core(self) -> None:
-        python_files = list(SRC_ROOT.glob("*.py"))
-        names = [f.name for f in python_files]
-        assert names == ["__init__.py"], (
-            f"research_core/ should contain only __init__.py in RC0, found: {names}"
-        )
+    def test_rc1_required_modules_exist(self) -> None:
+        """RC1 deliverables — contracts, protocols, exceptions — must be present."""
+        for module_name in RC1_REQUIRED_MODULES:
+            relative = module_name.replace(".", "/")
+            as_package = SRC_ROOT.parent / (relative + "/__init__.py")
+            as_module = SRC_ROOT.parent / (relative + ".py")
+            assert as_package.exists() or as_module.exists(), (
+                f"Required RC1 module missing: {module_name}"
+            )

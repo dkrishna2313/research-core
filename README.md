@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC0 — Product and Architecture Foundation**
+**Status: RC1 — Core Contracts and Package Boundary**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-The research engine is not yet implemented. This release establishes the product definition, architecture, dependency rules, and development tooling only.
+The research engine is not yet implemented. RC1 defines the full typed contract layer and provider protocol boundaries. All domain types are stable and importable.
 
 ---
 
@@ -39,44 +39,70 @@ ResearchRequest
   → ResearchResult
 ```
 
-Future public API direction:
+The contract layer is now fully defined. You can construct and inspect all domain types:
+
+```python
+from research_core import (
+    ResearchRequest,
+    ResearchResult,
+    ResearchStatus,
+    EvidenceItem,
+    Claim,
+    serialize,
+)
+
+# Build a research request
+request = ResearchRequest(
+    question="What are the major growth opportunities in sports consulting?",
+    profiles=("sports",),
+    use_web=True,
+    max_web_results=8,
+)
+
+# All contract types are available for engine implementors and consumers
+# Engine implementation starts in RC2 (knowledge adapter)
+```
+
+Future public API direction (RC8+):
 
 ```python
 from research_core import ResearchEngine, ResearchRequest
 
 engine = ResearchEngine(
-    knowledge_store="/path/to/knowledge_store",
-    web_provider="duckduckgo",
+    knowledge_provider=MyKnowledgeStore(),
+    profile_provider=MyProfileRegistry(),
+    synthesizer=MyLLMSynthesizer(),
 )
 
-result = engine.run(
-    ResearchRequest(
-        question="What are the major growth opportunities in sports consulting?",
-        profiles=["sports"],
-        use_web=True,
-        max_web_results=8,
-    )
-)
+result = engine.run(request)
 ```
 
-The structured result will expose: `summary`, `claims`, `evidence`, `contradictions`,
-`research_gaps`, `open_questions`, `sources`, `quality_diagnostics`, `trace`.
+The structured result exposes: `sources`, `evidence`, `claims`, `contradictions`,
+`gaps`, `open_questions`, `synthesis`, `quality`, `trace`.
 
 ---
 
 ## Current Phase
 
-**RC0 — Product and Architecture Foundation**
+**RC1 — Core Contracts and Package Boundary**
 
 This phase delivers:
+
+- `src/research_core/contracts/` — all typed domain contracts (frozen dataclasses)
+- `src/research_core/protocols/` — provider protocol boundaries (structural protocols)
+- `src/research_core/exceptions.py` — typed exception hierarchy
+- `docs/architecture/CONTRACTS.md` — contract reference documentation
+- 206 passing tests, zero mypy errors, zero ruff violations
+
+No retrieval, web search, LLM calls, evidence ranking, claim extraction, contradiction detection,
+gap analysis, synthesis, rendering, or research CLI is implemented in RC1.
+
+**RC0 deliverables** (still present):
 
 - `docs/product/PRODUCT_BRIEF.md` — users, use cases, non-goals, success criteria
 - `docs/architecture/ARCHITECTURE.md` — component model, pipeline, boundaries
 - `docs/architecture/DEPENDENCY_RULES.md` — enforceable dependency rules
 - `docs/architecture/ROADMAP.md` — RC0 through RC9 with acceptance criteria
-
-No retrieval, web search, LLM calls, evidence ranking, claim extraction, contradiction detection,
-gap analysis, synthesis, rendering, or research CLI is implemented in RC0.
 
 ---
 
@@ -116,6 +142,7 @@ python3 -m mypy src
 |---|---|
 | [Product Brief](docs/product/PRODUCT_BRIEF.md) | Users, use cases, non-goals, risks |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Pipeline, components, boundaries |
+| [Contracts Reference](docs/architecture/CONTRACTS.md) | Contract types, validation, serialization |
 | [Dependency Rules](docs/architecture/DEPENDENCY_RULES.md) | Enforceable import constraints |
 | [Roadmap](docs/architecture/ROADMAP.md) | RC0–RC9 phases and acceptance criteria |
 
@@ -138,8 +165,8 @@ python3 -m mypy src
 
 | Phase | Description |
 |---|---|
-| RC0 | Product and Architecture Foundation ← current |
-| RC1 | Core Contracts and Package Boundary |
+| RC0 | Product and Architecture Foundation ✓ |
+| RC1 | Core Contracts and Package Boundary ← current |
 | RC2 | Knowledge Adapter |
 | RC3 | Web Search Adapter |
 | RC4 | Evidence Normalization and Ranking |
