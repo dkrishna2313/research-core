@@ -28,11 +28,16 @@ from typing import Any
 
 def serialize(obj: Any) -> Any:
     """Recursively convert a contract object to a JSON-serializable structure."""
-    if obj is None or isinstance(obj, (bool, int, float, str)):
+    if obj is None or isinstance(obj, (bool, int, float)):
         return obj
 
+    # Enum check must precede str: StrEnum values satisfy isinstance(x, str)
+    # but must be reduced to their plain .value string, not returned as-is.
     if isinstance(obj, Enum):
         return obj.value
+
+    if isinstance(obj, str):
+        return obj
 
     if isinstance(obj, datetime):
         return obj.isoformat()

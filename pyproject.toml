@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-core"
-version = "0.0.0"
-description = "Domain-neutral research library — RC0 foundation"
+version = "0.1.0"
+description = "Domain-neutral research library — RC1 core contracts and provider protocols"
 readme = "README.md"
 # Python 3.11 minimum: match-statement syntax and tomllib are stable,
 # typing improvements (Self, TypeVarTuple, ParamSpec, LiteralString) are

@@ -40,6 +40,21 @@ class TestSerializeEnum:
         assert serialize(SampleEnum.FOO) == "foo"
         assert serialize(SampleEnum.BAR) == "bar"
 
+    def test_str_enum_returns_plain_str(self) -> None:
+        """StrEnum values must serialize to plain str, not the enum subclass."""
+        result = serialize(SampleEnum.FOO)
+        assert type(result) is str, (
+            f"Expected plain str, got {type(result)}; "
+            "StrEnum extends str so isinstance checks pass — "
+            "serialize must convert to .value explicitly"
+        )
+
+    def test_research_status_serializes_to_plain_str(self) -> None:
+        from research_core.contracts.result import ResearchStatus
+        result = serialize(ResearchStatus.COMPLETE)
+        assert type(result) is str
+        assert result == "complete"
+
 
 class TestSerializeDatetime:
     def test_aware_datetime(self) -> None:

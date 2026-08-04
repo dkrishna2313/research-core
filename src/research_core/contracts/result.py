@@ -129,6 +129,14 @@ class ResearchResult:
         if not isinstance(self.metadata, types.MappingProxyType):
             object.__setattr__(self, "metadata", _to_proxy(self.metadata))
 
+        # A COMPLETE result with no sources at all contains no meaningful output.
+        # Callers that have useful partial content should use status=PARTIAL.
+        if self.status == ResearchStatus.COMPLETE and not self.sources:
+            raise ContractValidationError(
+                "a COMPLETE ResearchResult must contain at least one Source; "
+                "use status=PARTIAL when the result is incomplete"
+            )
+
         # --- unique-ID checks ---
         self._check_unique_ids(
             [s.source_id for s in self.sources], "source_id", "sources"

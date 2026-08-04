@@ -73,6 +73,34 @@ class TestResearchResultConstruction:
         with pytest.raises(ContractValidationError):
             make_minimal_result(completed_at=datetime(2024, 1, 1))
 
+    def test_complete_empty_result_rejected(self) -> None:
+        """A COMPLETE result with no sources is meaningless and must be rejected."""
+        with pytest.raises(ContractValidationError, match="COMPLETE"):
+            ResearchResult(
+                request=make_research_request(),
+                status=ResearchStatus.COMPLETE,
+                sources=(),
+                evidence=(),
+                claims=(),
+                contradictions=(),
+                gaps=(),
+                open_questions=(),
+            )
+
+    def test_partial_empty_sources_allowed(self) -> None:
+        """A PARTIAL result may have minimal content without raising."""
+        result = ResearchResult(
+            request=make_research_request(),
+            status=ResearchStatus.PARTIAL,
+            sources=(),
+            evidence=(),
+            claims=(),
+            contradictions=(),
+            gaps=(),
+            open_questions=(),
+        )
+        assert result.is_partial
+
 
 class TestResearchResultUniqueIds:
     def test_duplicate_source_ids_rejected(self) -> None:
