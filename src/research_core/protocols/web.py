@@ -18,13 +18,14 @@ from research_core.contracts.common import EMPTY_METADATA, Metadata, _to_proxy
 from research_core.contracts.evidence import EvidenceItem
 from research_core.contracts.request import ResearchRequest
 from research_core.contracts.sources import Source
+from research_core.exceptions import ContractValidationError
 
 
 @dataclass(frozen=True)
 class WebSearchRequest:
     """Parameters for a single web search operation.
 
-    query: the search query string.
+    query: the search query string (must not be empty or whitespace-only).
     max_results: maximum search result items to return; defaults to the
                  parent request value.
     max_pages: maximum page bodies to fetch and extract from; defaults to
@@ -38,6 +39,14 @@ class WebSearchRequest:
     max_pages: int | None = None
     language: str | None = None
     metadata: Metadata = field(default_factory=lambda: EMPTY_METADATA)
+
+    def __post_init__(self) -> None:
+        if not self.query.strip():
+            raise ContractValidationError(
+                "WebSearchRequest.query must not be empty or whitespace-only"
+            )
+        if not isinstance(self.metadata, types.MappingProxyType):
+            object.__setattr__(self, "metadata", _to_proxy(self.metadata))
 
     @property
     def effective_max_results(self) -> int:

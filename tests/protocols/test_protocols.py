@@ -7,6 +7,8 @@ properly-shaped objects satisfy isinstance() checks.
 
 from __future__ import annotations
 
+import pytest
+
 from research_core.contracts.claims import Claim
 from research_core.contracts.contradictions import Contradiction
 from research_core.contracts.evidence import EvidenceItem
@@ -158,3 +160,22 @@ class TestWebSearchRequest:
         assert wreq.effective_max_results == 8
         assert wreq.effective_max_pages == 3
         assert wreq.effective_language == "de"
+
+    def test_empty_query_rejected(self) -> None:
+        from research_core.exceptions import ContractValidationError
+
+        req = make_research_request()
+        with pytest.raises(ContractValidationError, match="query"):
+            WebSearchRequest(query="", parent_request=req)
+
+    def test_whitespace_query_rejected(self) -> None:
+        from research_core.exceptions import ContractValidationError
+
+        req = make_research_request()
+        with pytest.raises(ContractValidationError, match="query"):
+            WebSearchRequest(query="   ", parent_request=req)
+
+    def test_valid_query_accepted(self) -> None:
+        req = make_research_request()
+        wreq = WebSearchRequest(query="nuclear power", parent_request=req)
+        assert wreq.query == "nuclear power"

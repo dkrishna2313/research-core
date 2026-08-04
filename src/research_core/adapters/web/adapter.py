@@ -24,6 +24,7 @@ Thread safety:
 from __future__ import annotations
 
 import logging
+import types
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
@@ -154,6 +155,7 @@ class WebSearchAdapter:
 
         # Stage 2: deduplicate and validate URLs, limit to max_pages
         deduplicated = _dedup_hits(hits, max_pages)
+        pages_attempted = len(deduplicated)
 
         # Stage 3-5: fetch, extract, map
         sources: list[Source] = []
@@ -191,9 +193,16 @@ class WebSearchAdapter:
                 LOGGER.debug("skipping page (unexpected): %s url=%r", exc, hit.url)
                 continue
 
+        pages_succeeded = len(evidence_items)
+        diag: dict[str, object] = {
+            "search_hits": len(hits),
+            "pages_attempted": pages_attempted,
+            "pages_succeeded": pages_succeeded,
+        }
         return WebSearchResult(
             sources=tuple(sources),
             evidence=tuple(evidence_items),
+            metadata=types.MappingProxyType(diag),
         )
 
     # ------------------------------------------------------------------

@@ -205,6 +205,53 @@ class TestWebSearchAdapterSearchSuccess:
         assert call_kwargs["query"] == "nuclear energy"
 
 
+class TestWebSearchAdapterDiagnostics:
+    def test_result_metadata_has_pages_attempted(self) -> None:
+        hits = (make_search_hit(url="https://example.com/page"),)
+        adapter = WebSearchAdapter(
+            search_client=_make_search_client(hits),
+            page_fetcher=_make_fetcher(make_fetched_resource()),
+            extractor=_make_extractor(make_extraction_result()),
+        )
+        result = adapter.search(_make_request())
+        assert "pages_attempted" in result.metadata
+        assert result.metadata["pages_attempted"] == 1
+
+    def test_result_metadata_has_search_hits(self) -> None:
+        hits = (make_search_hit(url="https://example.com/a"), make_search_hit(url="https://example.com/b"))
+        adapter = WebSearchAdapter(
+            search_client=_make_search_client(hits),
+            page_fetcher=_make_fetcher(make_fetched_resource()),
+            extractor=_make_extractor(make_extraction_result()),
+        )
+        result = adapter.search(_make_request(max_pages=5))
+        assert result.metadata["search_hits"] == 2
+
+    def test_all_page_failure_distinguishable_from_zero_hits(self) -> None:
+        """Zero hits: pages_attempted=0. All-page failure: pages_attempted>0, pages_succeeded=0."""
+        # Zero hits case
+        zero_result = WebSearchAdapter(
+            search_client=_make_search_client(()),
+            page_fetcher=MagicMock(),
+            extractor=MagicMock(),
+        ).search(_make_request())
+        assert zero_result.metadata["pages_attempted"] == 0
+        assert zero_result.metadata["search_hits"] == 0
+
+        # All-page failure case
+        fetcher = MagicMock()
+        fetcher.fetch.side_effect = ProviderExecutionError("fetch failed")
+        all_fail_result = WebSearchAdapter(
+            search_client=_make_search_client((make_search_hit(url="https://example.com/x"),)),
+            page_fetcher=fetcher,
+            extractor=MagicMock(),
+        ).search(_make_request())
+        assert all_fail_result.metadata["search_hits"] == 1
+        assert all_fail_result.metadata["pages_attempted"] == 1
+        assert all_fail_result.metadata["pages_succeeded"] == 0
+        assert all_fail_result.evidence == ()
+
+
 class TestWebSearchAdapterPartialFailures:
     def test_one_page_failure_skipped(self) -> None:
         hits = (

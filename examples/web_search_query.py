@@ -26,6 +26,7 @@ def main() -> None:
     )
     parser.add_argument("--max-results", type=int, default=10, help="Max search results")
     parser.add_argument("--max-pages", type=int, default=5, help="Max pages to fetch")
+    parser.add_argument("--timeout", type=float, default=20.0, help="Timeout in seconds")
     parser.add_argument(
         "--cache-dir",
         type=Path,
@@ -58,7 +59,7 @@ def main() -> None:
     )
     request = WebSearchRequest(query=args.query, parent_request=parent)
 
-    adapter = WebSearchAdapter(cache=cache)
+    adapter = WebSearchAdapter(cache=cache, timeout_seconds=args.timeout)
     result = adapter.search(request)
 
     print(f"\nQuery:    {args.query!r}")
