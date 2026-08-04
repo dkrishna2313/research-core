@@ -11,6 +11,7 @@ pytestmark = pytest.mark.web
 from research_core.adapters.web.fetch import RequestsFetcher  # noqa: E402
 from research_core.adapters.web.models import FetchedResource  # noqa: E402
 from research_core.exceptions import ProviderExecutionError  # noqa: E402
+from tests.adapters.web.conftest import FakeResolver  # noqa: E402
 
 
 def _mock_session(
@@ -50,34 +51,34 @@ def _requests_module(session_cls: MagicMock) -> MagicMock:
 
 class TestRequestsFetcherSchemeValidation:
     def test_file_scheme_rejected(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with pytest.raises(ProviderExecutionError, match="unsupported URL scheme"):
             fetcher.fetch("file:///etc/passwd", timeout_seconds=5.0)
 
     def test_data_scheme_rejected(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with pytest.raises(ProviderExecutionError, match="unsupported URL scheme"):
             fetcher.fetch("data:text/html,hello", timeout_seconds=5.0)
 
     def test_javascript_scheme_rejected(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with pytest.raises(ProviderExecutionError, match="unsupported URL scheme"):
             fetcher.fetch("javascript:void(0)", timeout_seconds=5.0)
 
     def test_ftp_scheme_rejected(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with pytest.raises(ProviderExecutionError, match="unsupported URL scheme"):
             fetcher.fetch("ftp://example.com/file.txt", timeout_seconds=5.0)
 
     def test_mailto_scheme_rejected(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with pytest.raises(ProviderExecutionError, match="unsupported URL scheme"):
             fetcher.fetch("mailto:user@example.com", timeout_seconds=5.0)
 
 
 class TestRequestsFetcherSuccessPath:
     def test_returns_fetched_resource(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(content=b"hello")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -85,7 +86,7 @@ class TestRequestsFetcherSuccessPath:
         assert isinstance(result, FetchedResource)
 
     def test_status_code_preserved(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(status_code=200, content=b"ok")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -93,7 +94,7 @@ class TestRequestsFetcherSuccessPath:
         assert result.status_code == 200
 
     def test_404_returned_as_fetched_resource(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(status_code=404, content=b"not found")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -101,7 +102,7 @@ class TestRequestsFetcherSuccessPath:
         assert result.status_code == 404
 
     def test_403_returned_as_fetched_resource(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(status_code=403, content=b"forbidden")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -109,7 +110,7 @@ class TestRequestsFetcherSuccessPath:
         assert result.status_code == 403
 
     def test_final_url_preserved_after_redirect(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(
             final_url="https://example.com/redirected",
             content=b"content",
@@ -121,7 +122,7 @@ class TestRequestsFetcherSuccessPath:
         assert result.requested_url == "https://example.com/original"
 
     def test_retrieved_at_is_timezone_aware(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(content=b"ok")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -129,7 +130,7 @@ class TestRequestsFetcherSuccessPath:
         assert result.retrieved_at.tzinfo is not None
 
     def test_content_type_preserved(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(content_type="application/pdf", content=b"%PDF")
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -138,7 +139,7 @@ class TestRequestsFetcherSuccessPath:
 
     def test_content_preserved(self) -> None:
         body = b"Hello, world!"
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         session_cls = _mock_session(content=body)
         mock_req = _requests_module(session_cls)
         with patch.object(fetcher, "_import_requests", return_value=mock_req):
@@ -152,7 +153,7 @@ class TestRequestsFetcherErrors:
         return cls("error message")
 
     def test_timeout_raises_execution_error(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         exc = self._make_exc_with_name("ReadTimeout")
         session_cls = _mock_session(exc=exc)
         mock_req = _requests_module(session_cls)
@@ -163,7 +164,7 @@ class TestRequestsFetcherErrors:
             fetcher.fetch("https://example.com", timeout_seconds=1.0)
 
     def test_too_many_redirects_raises_execution_error(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         exc = self._make_exc_with_name("TooManyRedirects")
         session_cls = _mock_session(exc=exc)
         mock_req = _requests_module(session_cls)
@@ -174,7 +175,7 @@ class TestRequestsFetcherErrors:
             fetcher.fetch("https://example.com", timeout_seconds=5.0)
 
     def test_connection_error_raises_execution_error(self) -> None:
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         exc = self._make_exc_with_name("ConnectionError")
         session_cls = _mock_session(exc=exc)
         mock_req = _requests_module(session_cls)
@@ -187,7 +188,7 @@ class TestRequestsFetcherErrors:
     def test_missing_requests_raises_execution_error(self) -> None:
         import sys
 
-        fetcher = RequestsFetcher()
+        fetcher = RequestsFetcher(resolver=FakeResolver())
         with (
             patch.dict(sys.modules, {"requests": None}),  # type: ignore[dict-item]
             pytest.raises(ProviderExecutionError, match="requests"),
@@ -199,7 +200,7 @@ class TestRequestsFetcherSizeLimit:
     def test_response_truncated_at_max_bytes(self) -> None:
         max_bytes = 100
         content = b"x" * 200  # larger than limit
-        fetcher = RequestsFetcher(max_response_bytes=max_bytes)
+        fetcher = RequestsFetcher(max_response_bytes=max_bytes, resolver=FakeResolver())
 
         # Simulate streaming in chunks of 50 bytes
         mock_session_cls = MagicMock()

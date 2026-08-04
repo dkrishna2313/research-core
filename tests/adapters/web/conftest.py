@@ -6,7 +6,29 @@ from datetime import UTC, datetime
 
 import pytest
 
+from research_core.adapters.web.fetch import HostResolver
 from research_core.adapters.web.models import ExtractionResult, FetchedResource, SearchHit
+
+
+class FakeResolver:
+    """Test double for HostResolver. Always returns a configurable list of IPs."""
+
+    def __init__(self, addresses: list[str] | None = None) -> None:
+        self._addresses = addresses if addresses is not None else ["1.2.3.4"]
+
+    def resolve(self, hostname: str, port: int) -> list[str]:
+        return self._addresses
+
+    def __call__(self, hostname: str, port: int) -> list[str]:  # HostResolver duck type
+        return self._addresses
+
+
+assert isinstance(FakeResolver(), HostResolver)
+
+
+@pytest.fixture
+def fake_resolver() -> FakeResolver:
+    return FakeResolver()
 
 FIXED_TS = datetime(2024, 3, 1, 10, 0, 0, tzinfo=UTC)
 

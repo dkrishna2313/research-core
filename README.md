@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC3 — Web Search Adapter**
+**Status: RC4 — Evidence Normalization and Ranking**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-RC3 delivers the production `WebSearchAdapter` backed by DuckDuckGo, `requests`, and `trafilatura`. The research engine is not yet implemented. All domain contracts, the knowledge adapter, and the web search adapter are stable and importable.
+RC4 delivers the `research_core.normalization` package: provider-neutral evidence normalization, deterministic segmentation of long documents, exact and near-duplicate detection, and multi-component ranking with full explainability. It also hardens the web fetcher against SSRF with per-hop redirect validation. The research engine is not yet implemented. All domain contracts, the knowledge adapter, the web search adapter, and the normalization layer are stable and importable.
 
 ---
 
