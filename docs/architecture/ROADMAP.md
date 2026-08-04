@@ -1,0 +1,497 @@
+# Roadmap — research-core
+
+**Version:** RC0
+
+---
+
+## Sequencing Rules
+
+The following rules govern phase ordering and are non-negotiable:
+
+1. RC0 contains no production engine implementation.
+2. RC1 creates typed contracts and protocols but performs no real retrieval and makes no LLM calls.
+3. Knowledge and web integrations occur only through provider interfaces defined in RC1.
+4. Structured results (`ResearchResult`) are defined before any rendering is introduced.
+5. Quality diagnostics and research gaps are first-class outputs, not afterthoughts.
+6. Legacy migration (`research_agent` components) is selective and occurs only after the clean architecture exists in RC7.
+7. The legacy package must not become the new architecture by default. No legacy component is imported until it has passed a clean-architecture review.
+
+---
+
+## RC0 — Product and Architecture Foundation
+
+### Objective
+
+Establish the product definition, architecture documentation, dependency rules, and development tooling. No engine implementation.
+
+### Scope
+
+- `docs/product/PRODUCT_BRIEF.md`
+- `docs/architecture/ARCHITECTURE.md`
+- `docs/architecture/DEPENDENCY_RULES.md`
+- `docs/architecture/ROADMAP.md`
+- `README.md`
+- `pyproject.toml` with `src` layout, Python 3.11 minimum, dev tooling
+- `.gitignore`
+- `src/research_core/__init__.py` (package docstring and version only)
+- Foundation tests: package imports cleanly, docs exist, prohibited imports absent
+
+### Non-Scope
+
+- Any production implementation: retrieval, web search, LLM calls, evidence ranking, claim extraction, contradiction detection, gap analysis, synthesis, renderers, CLI
+- Protocol definitions
+- Domain model class definitions
+- Provider adapters
+
+### Dependencies
+
+None. This is the first phase.
+
+### Deliverables
+
+1. Four foundation documents
+2. Valid `pyproject.toml` that installs under Python 3.11
+3. Minimal `src/research_core/__init__.py`
+4. Foundation test suite
+
+### Acceptance Criteria
+
+- All four foundation documents exist and are complete
+- Package installs: `pip install -e ".[dev]"` succeeds
+- `python3 -m pytest` passes
+- `python3 -m ruff check .` passes
+- `python3 -m mypy src` passes
+- No prohibited imports present in `src/` or `tests/`
+- No domain-specific schema in package core
+- Documentation does not claim the research engine is operational
+
+### Exit Criteria
+
+All acceptance criteria are met and the final commit exists on `feature/rc0-product-architecture-foundation`. Working tree is clean.
+
+---
+
+## RC1 — Core Contracts and Package Boundary
+
+### Objective
+
+Define the typed, domain-neutral data contracts and provider protocols that all later phases build on. No real retrieval or LLM calls.
+
+### Scope
+
+- `ResearchRequest` — typed dataclass or Protocol
+- `ResearchResult` — typed dataclass with all field stubs
+- `Claim`, `EvidenceItem`, `Source`, `Provenance` — typed dataclasses
+- `Contradiction` — typed dataclass with ConflictType enum
+- `ResearchGap` — typed dataclass with GapType enum
+- `OpenQuestion` — typed dataclass
+- `QualityDiagnostics` — typed dataclass
+- `ResearchTrace` — typed dataclass
+- Provider protocols: `KnowledgeProvider`, `WebSearchProvider`
+- Analysis protocols: `ClaimExtractor`, `ContradictionDetector`, `GapAnalyzer`, `Synthesizer`
+- Renderer protocol: `Renderer`
+- `UnknownProfileError` and other exception types
+- Import boundary tests for all prohibited patterns
+- Contract tests verifying invariants
+
+### Non-Scope
+
+- Any working adapter implementation
+- Any LLM call
+- Actual evidence retrieval
+- Synthesis
+
+### Dependencies
+
+RC0 complete.
+
+### Deliverables
+
+1. All typed contracts in `src/research_core/contracts/`
+2. All protocols in `src/research_core/protocols/`
+3. Exception types in `src/research_core/exceptions.py`
+4. Import boundary tests
+5. Contract invariant tests
+
+### Acceptance Criteria
+
+- All contract types are importable with no side effects
+- All protocol interfaces are importable
+- `mypy --strict` passes on all contract and protocol modules
+- Import boundary tests pass
+- No external package imports in `src/research_core/contracts/`
+- `UnknownProfileError` is raised when an unknown profile is passed (no fallback)
+
+### Exit Criteria
+
+All acceptance criteria met on `feature/rc1-contracts`. No real retrieval, adapter, or LLM code introduced.
+
+---
+
+## RC2 — Knowledge Adapter
+
+### Objective
+
+Integrate the external knowledge layer behind the `KnowledgeProvider` protocol. Knowledge retrieval works end-to-end through the provider boundary.
+
+### Scope
+
+- `KnowledgeAdapter` implementing `KnowledgeProvider`
+- Maps `knowledge.retriever` results to `EvidenceItem` with full provenance
+- `knowledge` package added as an optional dev/integration dependency
+- Provider adapter tests with a real knowledge store fixture
+- Protocol conformance tests
+
+### Non-Scope
+
+- Web acquisition
+- Analysis services
+- Synthesis
+
+### Dependencies
+
+RC1 complete. `knowledge-layer` package available at the configured path.
+
+### Deliverables
+
+1. `src/research_core/providers/knowledge_adapter.py`
+2. Provider adapter tests
+3. Protocol conformance test for `KnowledgeAdapter`
+4. `pyproject.toml` optional dependency `research-core[knowledge]`
+
+### Acceptance Criteria
+
+- `KnowledgeAdapter` passes the `KnowledgeProvider` protocol conformance test
+- Retrieved `EvidenceItem` objects have `source_type = "knowledge"` and full provenance
+- Core contracts are not modified by this phase
+- Import boundary tests still pass (no `knowledge.*` in `contracts/`)
+
+### Exit Criteria
+
+All acceptance criteria met. `KnowledgeAdapter` is importable and functional against a test fixture.
+
+---
+
+## RC3 — Web Search Adapter
+
+### Objective
+
+Wrap the DuckDuckGo web-search and page-acquisition implementation behind the `WebSearchProvider` protocol.
+
+### Scope
+
+- `DuckDuckGoAdapter` implementing `WebSearchProvider`
+- Web page acquisition, content extraction, and caching
+- Maps web documents to `EvidenceItem` with `source_type = "web"`
+- `ddgs`, `requests`, `trafilatura` as optional adapter dependencies
+- Adapter tests with cached fixtures (no live network calls in CI)
+- Protocol conformance tests
+
+### Non-Scope
+
+- The legacy `research_agent.cli` — must not be imported
+- Web evidence treated as confirmed fact — quality scoring is RC4's responsibility
+
+### Dependencies
+
+RC1 complete. RC2 optional (independent).
+
+### Deliverables
+
+1. `src/research_core/providers/duckduckgo_adapter.py`
+2. `src/research_core/providers/web_cache.py` (if not provided by the adapter)
+3. Adapter tests with fixture responses
+4. `pyproject.toml` optional dependency `research-core[web]`
+
+### Acceptance Criteria
+
+- `DuckDuckGoAdapter` passes the `WebSearchProvider` protocol conformance test
+- No live network calls in the test suite (cached fixtures used)
+- Web `EvidenceItem` objects have `source_type = "web"` and URL provenance
+- `research_agent.cli` is not imported anywhere
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. Adapter is functional against fixture responses.
+
+---
+
+## RC4 — Evidence Normalization and Ranking
+
+### Objective
+
+Normalize evidence from both knowledge and web sources into a unified, ranked evidence pool. Preserve provenance and apply quality scoring.
+
+### Scope
+
+- Source normalization service: unifies `EvidenceItem` schema across source types
+- Evidence ranking service: scores by relevance, authority, recency
+- Quality scoring per evidence item (initial formula)
+- Knowledge and web provenance preserved and distinct after normalization
+- Deterministic ranking algorithm with no LLM dependency
+- Tests with fixed evidence fixtures
+
+### Non-Scope
+
+- Claim extraction
+- Contradiction detection
+- LLM-based reranking (may be added as an optional path later)
+
+### Dependencies
+
+RC2 and RC3 complete (or stub implementations available).
+
+### Deliverables
+
+1. `src/research_core/analysis/normalizer.py`
+2. `src/research_core/analysis/ranker.py`
+3. Quality scoring function or class
+4. Tests with deterministic fixtures
+
+### Acceptance Criteria
+
+- Knowledge and web evidence items share a unified schema after normalization
+- `source_type` field is preserved and never altered
+- Ranking is deterministic for the same input
+- Empty evidence pool produces a `ResearchGap` for missing evidence
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. Normalizer and ranker are independently testable.
+
+---
+
+## RC5 — Claim Extraction and Contradiction Detection
+
+### Objective
+
+Extract discrete claims from the ranked evidence pool and detect explicit contradictions.
+
+### Scope
+
+- `ClaimExtractor` — rule-based baseline; LLM-assisted path optional
+- `ContradictionDetector` — rule-based baseline for numeric and temporal conflicts; LLM-assisted path optional
+- All eight contradiction types documented in the architecture are representable
+- Contradiction objects include: conflicting items, conflict type, severity, resolution status
+- Deterministic fixture tests
+
+### Non-Scope
+
+- Gap analysis
+- Synthesis
+
+### Dependencies
+
+RC4 complete.
+
+### Deliverables
+
+1. `src/research_core/analysis/claim_extractor.py`
+2. `src/research_core/analysis/contradiction_detector.py`
+3. Tests covering all eight contradiction types
+4. Protocol conformance tests for both analysis services
+
+### Acceptance Criteria
+
+- Claims are distinct from evidence items (no conflation)
+- Each claim references its supporting evidence IDs
+- Contradictions are represented as `Contradiction` objects, not prose
+- All eight contradiction types produce representable output
+- No contradiction is silently absorbed into the claim list
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. Both analysis services are independently testable with deterministic fixtures.
+
+---
+
+## RC6 — Research Gap Analysis and Quality Diagnostics
+
+### Objective
+
+Make research gaps and quality diagnostics first-class outputs. The system must never report "no gaps" when evidence is absent, weak, or incomplete.
+
+### Scope
+
+- `GapAnalyzer` — evaluates all gap conditions from the architecture document
+- `QualityDiagnostics` populated with all component scores
+- Gap conditions tested deterministically
+- Quality dimension scoring (all dimensions from the product brief)
+- Partial result semantics: a result with gaps is valid but explicitly annotated
+
+### Non-Scope
+
+- Synthesis
+- Rendering
+
+### Dependencies
+
+RC5 complete.
+
+### Deliverables
+
+1. `src/research_core/analysis/gap_analyzer.py`
+2. `src/research_core/analysis/quality_scorer.py`
+3. Tests for each gap condition
+4. Tests that verify no gap condition produces a "no gaps" result incorrectly
+
+### Acceptance Criteria
+
+- All nine gap conditions produce at least one `ResearchGap`
+- `QualityDiagnostics` exposes all component scores individually
+- An empty evidence pool never produces an empty `research_gaps` list
+- A composite quality score (if present) does not hide component scores
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. `GapAnalyzer` and `QualityDiagnostics` are independently testable.
+
+---
+
+## RC7 — Synthesis and Renderers
+
+### Objective
+
+Produce a complete, structured `ResearchResult`. Introduce Markdown as the first renderer.
+
+### Scope
+
+- `Synthesizer` — produces `summary` from claims and evidence (deterministic baseline)
+- `ResearchEngine` — full pipeline orchestration from request to result
+- `MarkdownRenderer` — derives Markdown from `ResearchResult`
+- `ResearchResult` with all fields populated from a real pipeline run
+- Integration test with a fixed evidence fixture
+- Renderer snapshot tests
+
+### Non-Scope
+
+- LLM-assisted synthesis (optional path for later)
+- CLI (RC8)
+- Domain-specific renderers
+
+### Dependencies
+
+RC6 complete.
+
+### Deliverables
+
+1. `src/research_core/synthesis/synthesizer.py`
+2. `src/research_core/engine.py`
+3. `src/research_core/renderers/markdown.py`
+4. Integration test
+5. Renderer snapshot test
+
+### Acceptance Criteria
+
+- `ResearchEngine.run()` produces a `ResearchResult` from a fixture request
+- `ResearchResult` contains non-empty `claims`, `evidence`, `sources`, `quality_diagnostics`, `trace`
+- `MarkdownRenderer` produces valid Markdown from any `ResearchResult`
+- The Markdown renderer does not modify or produce the `ResearchResult`
+- Synthesis failure produces a partial result, not an exception (unless the request was invalid)
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. Full pipeline is testable end-to-end.
+
+---
+
+## RC8 — Standalone CLI and External Consumer Demo
+
+### Objective
+
+Provide a usable standalone CLI and an external consumer demo that shows how to embed `research-core` in an application.
+
+### Scope
+
+- `src/research_core/cli.py` (or `src/research_core/__main__.py`)
+- Entry point registered in `pyproject.toml`
+- CLI arguments: question, optional profile, optional web flag, output format
+- Unknown profile raises an error and exits with a non-zero code
+- CLI tests
+- `examples/` consumer demo script
+
+### Non-Scope
+
+- Domain-specific CLI flags
+- Strategy or recommendation output
+- Legacy CLI replacement
+
+### Dependencies
+
+RC7 complete.
+
+### Deliverables
+
+1. `src/research_core/cli.py`
+2. Entry point in `pyproject.toml`
+3. CLI tests
+4. `examples/demo_consumer.py`
+
+### Acceptance Criteria
+
+- `research-core run "question"` executes and produces a structured result or Markdown output
+- Unknown profile exits non-zero with a clear error message
+- CLI does not import domain-specific logic
+- Consumer demo runs against a local fixture without a live knowledge store
+- Import boundary tests still pass
+
+### Exit Criteria
+
+All acceptance criteria met. CLI is independently installable and functional.
+
+---
+
+## RC9 — Legacy Component Migration
+
+### Objective
+
+Selectively migrate proven, stable components from `research_agent` into `research-core`. Discard components that do not meet the clean-architecture standard.
+
+### Scope
+
+- Audit `research_agent/web_search.py` and `research_agent/web_cache.py` for migration suitability
+- Migrate only components that pass a clean-architecture review
+- Add or update tests for any migrated component
+- Remove any migrated component's dependency on `research_agent.cli` or other prohibited modules
+
+### Non-Scope
+
+- Copying the complete `research_agent` package
+- Importing `research_agent.cli` into any `research-core` module
+- Changing the public API of `research-core` to match `research_agent`'s API
+
+### Dependencies
+
+RC8 complete. Clean architecture fully in place.
+
+### Deliverables
+
+1. Migration audit report (markdown)
+2. Migrated components (if any) with tests
+3. Documentation of what was migrated and what was not
+
+### Acceptance Criteria
+
+- No migrated component imports from `research_agent.cli`
+- Every migrated component has test coverage
+- Import boundary tests still pass after migration
+- The public API of `research-core` is not broken by migration
+
+### Exit Criteria
+
+All acceptance criteria met. Migration audit report exists. Working tree is clean.
+
+---
+
+## Open Questions
+
+1. **License selection** — Required before any public distribution of the package.
+2. **Synthesis model** — Deterministic baseline vs. LLM-assisted in RC7. Decision needed before RC7 scoping.
+3. **Profile registry** — Whether `research-core` provides a built-in registry mechanism or always expects caller-constructed profiles. Decision needed before RC1 finalizes `ResearchRequest`.
+4. **Package distribution channel** — PyPI, private registry, or local editable install only.
+5. **LLM provider selection** — Which LLM SDK(s) are introduced in RC5/RC7 optional paths.

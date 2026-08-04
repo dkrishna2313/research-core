@@ -8,3 +8,8 @@ __pycache__/
 .env
 .cache/
 outputs/
+build/
+dist/
+*.egg-info/
+.coverage
+htmlcov/
