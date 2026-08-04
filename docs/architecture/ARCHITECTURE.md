@@ -99,11 +99,10 @@ Each stage has a defined input contract, an observable output, and a failure mod
 ```
 research-core/
 ├── core domain contracts        (ResearchRequest, ResearchResult, Claim, EvidenceItem, ...)
-├── provider protocols           (KnowledgeProvider, WebSearchProvider)
+├── provider protocols           (KnowledgeProvider, WebSearchProvider, ProfileProvider, Synthesizer)
 ├── provider adapters            (KnowledgeAdapter, DuckDuckGoAdapter, ...)
 ├── analysis services            (EvidenceRanker, ClaimExtractor, ContradictionDetector, GapAnalyzer)
 ├── orchestration                (ResearchEngine, pipeline coordination)
-├── synthesis                    (Synthesizer)
 ├── renderers                    (MarkdownRenderer, ...)
 └── CLI                          (entry point; introduced in RC8)
 ```
@@ -113,11 +112,10 @@ research-core/
 | Component | Responsibility | May import |
 |---|---|---|
 | Core domain contracts | Define typed data structures only | Python stdlib only |
-| Provider protocols | Define abstract interfaces for external integrations | Core contracts |
+| Provider protocols | Define abstract interfaces for external integrations (`KnowledgeProvider`, `WebSearchProvider`, `ProfileProvider`, `Synthesizer`) | Core contracts |
 | Provider adapters | Implement provider protocols against real external systems | Provider protocols, core contracts, narrow external packages |
 | Analysis services | Execute analysis against the normalized evidence model | Core contracts, own protocols |
 | Orchestration | Coordinate the pipeline stages | Contracts, provider protocols, analysis services |
-| Synthesis | Produce summary and claims from the ranked evidence pool | Core contracts |
 | Renderers | Transform `ResearchResult` into human-readable formats | Core contracts (result structures only) |
 | CLI | Parse arguments and invoke the public API | Public application API only |
 | Consumer applications | Use `research-core` as a library | `research-core` public API; never the reverse |
@@ -130,13 +128,19 @@ The following concepts define the intended domain model. Detailed Python class d
 
 ### ResearchRequest
 
-Caller-supplied input. Contains the question, optional profiles, optional web flag, and provider configuration. An unknown profile is an error at validation time.
+Caller-supplied input. Contains the question, optional profiles, optional web flag, and provider configuration.
+
+`profiles` is a list of profile identifier strings. Profile resolution occurs through a caller-supplied `ProfileProvider` or registry interface. `research-core` does not contain a built-in domain-profile registry. An unknown profile identifier raises a typed error at validation time. There is no silent fallback to any default profile.
 
 ### ResearchResult
 
 The canonical output. All renderer output is derived from this structure. Contains: `summary`, `claims`, `evidence`, `contradictions`, `research_gaps`, `open_questions`, `sources`, `quality_diagnostics`, `trace`.
 
-A `ResearchResult` may be partial (e.g., evidence was retrieved but synthesis failed). Partial results carry an explicit status and diagnostic information.
+A `ResearchResult` carries a `status` field. A complete result has `status="complete"`. A result where useful evidence was produced but some later stage failed has `status="partial"`. A partial result preserves all structured artifacts that were successfully produced and must never be treated as equivalent to a complete result.
+
+Conditions that prevent any meaningful result (e.g., invalid request, total provider failure before evidence is produced) raise typed exceptions rather than returning a result object.
+
+A future strict-execution option on the engine may instruct it to raise a typed exception instead of returning a partial result.
 
 ### Claim
 
@@ -203,6 +207,10 @@ A structured execution log. Records what was retrieved at each stage, what decis
 
 ## Provider Boundaries
 
+### ProfileProvider
+
+Abstracts profile resolution. The caller supplies a `ProfileProvider` instance (or a compatible registry) that resolves string profile identifiers to profile configuration objects. The core does not contain any built-in domain profiles. If the caller does not supply a `ProfileProvider`, `profiles` must be absent from the `ResearchRequest`. If profiles are requested and the `ProfileProvider` returns no match for a given identifier, the engine raises `UnknownProfileError` — no fallback, no substitution.
+
 ### KnowledgeProvider
 
 Abstracts the knowledge layer. `research-core` calls the provider through a defined protocol; it does not import `knowledge.store` or `knowledge.retriever` directly from core domain logic.
@@ -251,7 +259,11 @@ Evaluates the evidence pool against a set of gap conditions (see ResearchGap abo
 
 ### Synthesis boundary
 
-Produces the `summary` and the final `ResearchResult` from the analysed evidence pool. Does not perform retrieval. Does not modify evidence provenance. A synthesis failure produces a partial result with an explicit status.
+Synthesis is provider-based. The `Synthesizer` is a protocol, not a concrete class. The core is not coupled to any LLM SDK. An LLM-assisted synthesis provider may be the primary production path, but a deterministic synthesis provider must remain supported for tests, constrained workflows, reproducibility, and fallback.
+
+The synthesizer produces the `summary` and assembles the final `ResearchResult` from the analysed evidence pool. It does not perform retrieval. It does not modify evidence provenance.
+
+A synthesis failure produces `ResearchResult(status="partial")` with all pre-synthesis artifacts (evidence, claims, contradictions, gaps, quality diagnostics, trace) preserved. The partial result must not be treated as equivalent to a complete result.
 
 ### Renderer boundary
 

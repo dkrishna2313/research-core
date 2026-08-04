@@ -153,4 +153,4 @@ python3 -m mypy src
 
 ## License
 
-License not yet selected. See open questions in `docs/architecture/ROADMAP.md`.
+License: To be determined. Decision required before RC8.

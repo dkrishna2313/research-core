@@ -276,17 +276,36 @@ Later phases will add additional success criteria as each layer is implemented.
 
 ## Open Product Questions
 
-1. **Profile registry:** Should `research-core` provide a built-in profile registry mechanism, or should profiles always be caller-constructed objects? (Decision needed before RC1 finalizes `ResearchRequest`.)
+The following questions remain open and require product-owner input before the indicated phase.
 
-2. **Partial result semantics:** Should a `ResearchResult` with incomplete evidence be an exception, a degraded result object with an explicit status flag, or both depending on severity? (Decision needed before RC6.)
+1. **Contradiction threshold:** What severity of contradiction should promote a result from "has unresolved contradictions" to "synthesis not recommended"? (Decision needed before RC5.)
 
-3. **Synthesis model:** Should synthesis be deterministic (template-based extraction from claims), LLM-assisted, or pluggable? (Decision needed before RC7.)
+2. **Package distribution:** Will `research-core` be published to PyPI, distributed as a private package, or consumed only as a local editable install within the monorepo context?
 
-4. **Contradiction threshold:** What severity of contradiction should promote a result from "has unresolved contradictions" to "synthesis not recommended"? (Decision needed before RC5.)
+---
 
-5. **License:** What open-source license, if any, should this package use?
+## Resolved Product Decisions
 
-6. **Package distribution:** Will `research-core` be published to PyPI, distributed as a private package, or consumed only as a local editable install within the monorepo context?
+The following were open questions that have been decided and are now binding on subsequent phases.
+
+### Profile resolution (resolved — binding for RC1)
+
+`ResearchRequest.profiles` accepts profile identifiers as strings. Profile resolution occurs through an explicitly supplied `ProfileProvider` or registry interface; `research-core` does not contain a built-in domain-profile registry. An unknown profile identifier must fail clearly. Silent fallback is prohibited without exception.
+
+### Partial result semantics (resolved — binding for RC6)
+
+- Conditions that prevent creation of any meaningful result (invalid request, unsupported configuration, total provider failure before evidence is produced) raise typed exceptions.
+- Conditions that occur after useful evidence, claims, contradictions, gaps, or diagnostics have been produced return `ResearchResult(status="partial")`. The partial result preserves all available structured artifacts.
+- A future strict-execution option on the engine may instruct it to raise instead of returning a partial result.
+- An empty evidence set is never presented as a successful complete result.
+
+### Synthesis model (resolved — binding for RC7)
+
+Synthesis is provider-based. The core is not coupled to any LLM SDK. An LLM-assisted synthesis provider may be the primary production path. Deterministic synthesis must remain supported for tests, constrained workflows, reproducibility, and fallback behavior. No synthesis implementation is introduced before RC7.
+
+### License
+
+License: To be determined. Decision required before RC8.
 
 ---
 

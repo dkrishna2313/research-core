@@ -87,10 +87,11 @@ Define the typed, domain-neutral data contracts and provider protocols that all 
 - `OpenQuestion` — typed dataclass
 - `QualityDiagnostics` — typed dataclass
 - `ResearchTrace` — typed dataclass
-- Provider protocols: `KnowledgeProvider`, `WebSearchProvider`
-- Analysis protocols: `ClaimExtractor`, `ContradictionDetector`, `GapAnalyzer`, `Synthesizer`
+- Provider protocols: `KnowledgeProvider`, `WebSearchProvider`, `ProfileProvider`, `Synthesizer`
+- Analysis protocols: `ClaimExtractor`, `ContradictionDetector`, `GapAnalyzer`
 - Renderer protocol: `Renderer`
 - `UnknownProfileError` and other exception types
+- `ResearchResult.status` field (`"complete"` | `"partial"`)
 - Import boundary tests for all prohibited patterns
 - Contract tests verifying invariants
 
@@ -360,7 +361,7 @@ Produce a complete, structured `ResearchResult`. Introduce Markdown as the first
 
 ### Scope
 
-- `Synthesizer` — produces `summary` from claims and evidence (deterministic baseline)
+- `Synthesizer` provider protocol (already defined in RC1) — first concrete implementation (deterministic baseline)
 - `ResearchEngine` — full pipeline orchestration from request to result
 - `MarkdownRenderer` — derives Markdown from `ResearchResult`
 - `ResearchResult` with all fields populated from a real pipeline run
@@ -490,8 +491,31 @@ All acceptance criteria met. Migration audit report exists. Working tree is clea
 
 ## Open Questions
 
-1. **License selection** — Required before any public distribution of the package.
-2. **Synthesis model** — Deterministic baseline vs. LLM-assisted in RC7. Decision needed before RC7 scoping.
-3. **Profile registry** — Whether `research-core` provides a built-in registry mechanism or always expects caller-constructed profiles. Decision needed before RC1 finalizes `ResearchRequest`.
-4. **Package distribution channel** — PyPI, private registry, or local editable install only.
-5. **LLM provider selection** — Which LLM SDK(s) are introduced in RC5/RC7 optional paths.
+1. **Contradiction threshold** — What severity of contradiction promotes a result to "synthesis not recommended"? Decision needed before RC5.
+2. **Package distribution channel** — PyPI, private registry, or local editable install only.
+3. **LLM provider selection** — Which LLM SDK(s) are introduced in RC5/RC7 optional paths.
+
+---
+
+## Resolved Decisions
+
+The following were open questions that have been decided.
+
+### Profile resolution
+
+`ResearchRequest.profiles` accepts string identifiers. Resolution occurs through an explicitly supplied `ProfileProvider` or registry interface; no built-in domain registry exists in `research-core`. Unknown identifiers raise `UnknownProfileError`. Silent fallback is prohibited. — **Binding for RC1.**
+
+### Partial result semantics
+
+- Failures that prevent any meaningful result raise typed exceptions.
+- Failures after useful evidence is produced return `ResearchResult(status="partial")` with all available artifacts preserved.
+- A future strict-execution option may raise instead of returning a partial result.
+- Empty evidence is never a successful complete result. — **Binding for RC6.**
+
+### Synthesis model
+
+Synthesis is provider-based via a `Synthesizer` protocol. The core is not coupled to any LLM SDK. LLM-assisted synthesis may be the primary production provider. Deterministic synthesis must remain supported for tests, reproducibility, and fallback. — **Binding for RC7.**
+
+### License
+
+License: To be determined. Decision required before RC8.
