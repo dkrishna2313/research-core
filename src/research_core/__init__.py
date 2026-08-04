@@ -74,6 +74,7 @@ from research_core.protocols import (
     GapAnalyzer,
     KnowledgeProvider,
     KnowledgeRetrievalRequest,
+    KnowledgeRetrievalResult,
     OutputT_co,
     ProfileProvider,
     Renderer,
@@ -83,7 +84,7 @@ from research_core.protocols import (
     WebSearchRequest,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "__version__",
@@ -147,6 +148,7 @@ __all__ = [
     "GapAnalyzer",
     "KnowledgeProvider",
     "KnowledgeRetrievalRequest",
+    "KnowledgeRetrievalResult",
     "OutputT_co",
     "ProfileProvider",
     "Renderer",

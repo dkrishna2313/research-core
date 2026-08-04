@@ -1,6 +1,6 @@
 # Dependency Rules — research-core
 
-**Version:** RC0
+**Version:** RC2
 **Status:** Normative — these rules are enforced from RC1 onward through import boundary tests
 
 ---
@@ -63,10 +63,11 @@ consumer applications         research-core public API
 The following flows are explicitly permitted:
 
 ```
-research_core.providers.knowledge_adapter
-    → research_core.protocols.knowledge_provider   (OK — adapter implements its own protocol)
+research_core.adapters.knowledge.adapter
+    → research_core.protocols.knowledge            (OK — adapter implements its own protocol)
     → research_core.contracts.evidence             (OK — uses core EvidenceItem)
     → knowledge.store                              (OK — narrow external dependency, in adapter only)
+    → knowledge.retriever                          (OK — narrow external dependency, in adapter only; lazy import)
 
 research_core.analysis.contradiction_detector
     → research_core.contracts.claim                (OK — uses core Claim)

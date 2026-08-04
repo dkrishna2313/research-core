@@ -15,7 +15,11 @@ from research_core.protocols.analysis import (
     ContradictionDetector,
     GapAnalyzer,
 )
-from research_core.protocols.knowledge import KnowledgeProvider, KnowledgeRetrievalRequest
+from research_core.protocols.knowledge import (
+    KnowledgeProvider,
+    KnowledgeRetrievalRequest,
+    KnowledgeRetrievalResult,
+)
 from research_core.protocols.profiles import ProfileProvider, ResolvedProfile
 from research_core.protocols.rendering import OutputT_co, Renderer
 from research_core.protocols.synthesis import Synthesizer
@@ -25,6 +29,7 @@ __all__ = [
     # knowledge
     "KnowledgeProvider",
     "KnowledgeRetrievalRequest",
+    "KnowledgeRetrievalResult",
     # web
     "WebSearchProvider",
     "WebSearchRequest",

@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC1 — Core Contracts and Package Boundary**
+**Status: RC2 — Knowledge Adapter**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-The research engine is not yet implemented. RC1 defines the full typed contract layer and provider protocol boundaries. All domain types are stable and importable.
+RC2 delivers the production `KnowledgeAdapter` that connects `research-core` to the knowledge-layer. The research engine is not yet implemented. All domain contracts and the knowledge adapter are stable and importable.
 
 ---
 
@@ -39,28 +39,28 @@ ResearchRequest
   → ResearchResult
 ```
 
-The contract layer is now fully defined. You can construct and inspect all domain types:
+The contract layer is fully defined and the knowledge adapter is live:
 
 ```python
-from research_core import (
-    ResearchRequest,
-    ResearchResult,
-    ResearchStatus,
-    EvidenceItem,
-    Claim,
-    serialize,
+from research_core.adapters.knowledge import KnowledgeAdapter
+from research_core.protocols.knowledge import KnowledgeRetrievalRequest
+from research_core import ResearchRequest
+
+# Initialize the adapter (lazy — knowledge package imported on first retrieve())
+adapter = KnowledgeAdapter(store_root="/path/to/knowledge_store")
+
+# Build requests
+request = ResearchRequest(question="What are the deployment risks for SMRs?")
+k_request = KnowledgeRetrievalRequest(
+    query="SMR deployment barriers licensing",
+    parent_request=request,
+    profiles=("smr-general",),
 )
 
-# Build a research request
-request = ResearchRequest(
-    question="What are the major growth opportunities in sports consulting?",
-    profiles=("sports",),
-    use_web=True,
-    max_web_results=8,
-)
-
-# All contract types are available for engine implementors and consumers
-# Engine implementation starts in RC2 (knowledge adapter)
+# Retrieve — returns KnowledgeRetrievalResult(sources=..., evidence=...)
+result = adapter.retrieve(k_request)
+print(f"Evidence: {len(result.evidence)} items")
+print(f"Sources:  {len(result.sources)} records")
 ```
 
 Future public API direction (RC8+):
@@ -84,18 +84,23 @@ The structured result exposes: `sources`, `evidence`, `claims`, `contradictions`
 
 ## Current Phase
 
-**RC1 — Core Contracts and Package Boundary**
+**RC2 — Knowledge Adapter**
 
 This phase delivers:
+
+- `src/research_core/adapters/knowledge/` — `KnowledgeAdapter` and type mapping
+- `KnowledgeRetrievalResult` (RC1 contract correction) — bundles sources + evidence
+- Score normalization from knowledge-layer `[0, ~2.1]` to `[0.0, 1.0]`
+- Multi-profile retrieval with deduplication and re-ranking
+- Lazy optional dependency: importable without `knowledge` installed
+- 301 passing tests, zero mypy errors, zero ruff violations
+
+**RC1 deliverables** (still present):
 
 - `src/research_core/contracts/` — all typed domain contracts (frozen dataclasses)
 - `src/research_core/protocols/` — provider protocol boundaries (structural protocols)
 - `src/research_core/exceptions.py` — typed exception hierarchy
 - `docs/architecture/CONTRACTS.md` — contract reference documentation
-- 206 passing tests, zero mypy errors, zero ruff violations
-
-No retrieval, web search, LLM calls, evidence ranking, claim extraction, contradiction detection,
-gap analysis, synthesis, rendering, or research CLI is implemented in RC1.
 
 **RC0 deliverables** (still present):
 
@@ -145,6 +150,7 @@ python3 -m mypy src
 | [Contracts Reference](docs/architecture/CONTRACTS.md) | Contract types, validation, serialization |
 | [Dependency Rules](docs/architecture/DEPENDENCY_RULES.md) | Enforceable import constraints |
 | [Roadmap](docs/architecture/ROADMAP.md) | RC0–RC9 phases and acceptance criteria |
+| [Knowledge Adapter](docs/adapters/KNOWLEDGE_ADAPTER.md) | Adapter design, mappings, usage |
 
 ---
 
@@ -166,8 +172,8 @@ python3 -m mypy src
 | Phase | Description |
 |---|---|
 | RC0 | Product and Architecture Foundation ✓ |
-| RC1 | Core Contracts and Package Boundary ← current |
-| RC2 | Knowledge Adapter |
+| RC1 | Core Contracts and Package Boundary ✓ |
+| RC2 | Knowledge Adapter ← current |
 | RC3 | Web Search Adapter |
 | RC4 | Evidence Normalization and Ranking |
 | RC5 | Claim Extraction and Contradiction Detection |
