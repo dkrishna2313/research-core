@@ -166,6 +166,8 @@ class RequestsFetcher:
 
         try:
             session = requests.Session()
+            # Ignore HTTP_PROXY / HTTPS_PROXY env vars and .netrc credentials.
+            session.trust_env = False
             # Disable automatic redirects so we can validate each hop
             current_url = url
             resp = None

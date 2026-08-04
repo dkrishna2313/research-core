@@ -3,6 +3,13 @@ Evidence segmentation — split long EvidenceItem content into overlapping chunk
 
 Segments are deterministic: same input → same segment IDs and boundaries.
 Segment IDs are SHA256-based and stable across pipeline runs.
+
+Segment ID formula (as of RC4 hardening):
+    key = parent_id + NUL + source_id + NUL + idx + NUL + version + NUL + content_hash
+
+The content hash (SHA256 of the segment text) is included so that two segments
+at the same position but with different content produce different IDs. Segment IDs
+generated before this hardening will differ from those generated after.
 """
 
 from __future__ import annotations
@@ -39,7 +46,8 @@ def segment_evidence(
     segments: list[EvidenceItem] = []
 
     for idx, chunk_text in enumerate(chunks):
-        seg_id = _segment_id(item.evidence_id, item.source_id, idx, cfg.version)
+        content_hash = hashlib.sha256(chunk_text.encode()).hexdigest()
+        seg_id = _segment_id(item.evidence_id, item.source_id, idx, cfg.version, content_hash)
 
         if item.locator:
             locator = f"{item.locator} (segment {idx + 1}/{total})"
@@ -50,6 +58,7 @@ def segment_evidence(
             "segment_index": idx,
             "segment_count": total,
             "parent_evidence_id": item.evidence_id,
+            "content_hash": content_hash,
         }
 
         segments.append(
@@ -69,8 +78,8 @@ def segment_evidence(
     return tuple(segments)
 
 
-def _segment_id(parent_id: str, source_id: str, idx: int, version: str) -> str:
-    key = f"{parent_id}\x00{source_id}\x00{idx}\x00{version}"
+def _segment_id(parent_id: str, source_id: str, idx: int, version: str, content_hash: str) -> str:
+    key = f"{parent_id}\x00{source_id}\x00{idx}\x00{version}\x00{content_hash}"
     return "seg-" + hashlib.sha256(key.encode()).hexdigest()[:16]
 
 
