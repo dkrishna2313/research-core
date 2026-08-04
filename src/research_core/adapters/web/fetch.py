@@ -37,12 +37,14 @@ _USER_AGENT = "Mozilla/5.0 (compatible; research-core/0.4)"
 _ALLOWED_SCHEMES = {"http", "https"}
 
 _BLOCKED_NETWORKS: list[ipaddress.IPv4Network | ipaddress.IPv6Network] = [
+    ipaddress.ip_network("0.0.0.0/8"),  # unspecified / "this network" (RFC 1122)
     ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
     ipaddress.ip_network("127.0.0.0/8"),
     ipaddress.ip_network("169.254.0.0/16"),  # link-local / metadata
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
     ipaddress.ip_network("224.0.0.0/4"),  # multicast
+    ipaddress.ip_network("::/128"),  # IPv6 unspecified
     ipaddress.ip_network("::1/128"),  # IPv6 loopback
     ipaddress.ip_network("fc00::/7"),  # IPv6 ULA
     ipaddress.ip_network("fe80::/10"),  # IPv6 link-local
@@ -92,10 +94,15 @@ def _is_blocked_ip(addr_str: str) -> bool:
 
 
 def _validate_url_ssrf(url: str, resolver: HostResolver) -> None:
-    """Raise ProviderExecutionError if url resolves to a blocked address."""
+    """Raise ProviderExecutionError if url resolves to a blocked address or contains credentials."""
     parsed = urlparse(url)
     hostname = parsed.hostname
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
+
+    if parsed.username or parsed.password:
+        raise ProviderExecutionError(
+            f"SSRF protection: embedded credentials are not permitted in {url!r}"
+        )
 
     if not hostname:
         raise ProviderExecutionError(f"could not parse hostname from URL {url!r}")

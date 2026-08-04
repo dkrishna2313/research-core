@@ -180,9 +180,14 @@ def _content_hash(content: str) -> str:
 
 
 def _tokenize(content: str) -> frozenset[str]:
-    """Lowercase word tokens, excluding pure-numeric tokens."""
+    """Lowercase word tokens, including numeric tokens.
+
+    Numeric tokens are retained so that texts differing only in numeric values
+    (e.g. '$10 million' vs '$100 million', '2024' vs '2025') produce distinct
+    token sets and are not collapsed as near-duplicates.
+    """
     tokens = re.findall(r"\b\w+\b", content.lower())
-    return frozenset(t for t in tokens if not t.isdigit())
+    return frozenset(tokens)
 
 
 def _jaccard(a: frozenset[str], b: frozenset[str]) -> float:

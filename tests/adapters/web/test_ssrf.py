@@ -65,6 +65,13 @@ class TestIsBlockedIp:
         assert _is_blocked_ip("224.0.0.1") is True
         assert _is_blocked_ip("239.255.255.255") is True
 
+    def test_unspecified_ipv4_blocked(self) -> None:
+        assert _is_blocked_ip("0.0.0.0") is True
+        assert _is_blocked_ip("0.0.0.1") is True
+
+    def test_unspecified_ipv6_blocked(self) -> None:
+        assert _is_blocked_ip("::") is True
+
 
 class TestValidateUrlSsrf:
     def test_public_ip_passes(self) -> None:
@@ -99,6 +106,16 @@ class TestValidateUrlSsrf:
         resolver = FakeResolver(["1.2.3.4"])
         with pytest.raises(ProviderExecutionError, match="could not parse hostname"):
             _validate_url_ssrf("https://", resolver)
+
+    def test_embedded_credentials_rejected(self) -> None:
+        resolver = FakeResolver(["1.2.3.4"])
+        with pytest.raises(ProviderExecutionError, match="embedded credentials"):
+            _validate_url_ssrf("http://user:password@example.com/", resolver)
+
+    def test_embedded_username_only_rejected(self) -> None:
+        resolver = FakeResolver(["1.2.3.4"])
+        with pytest.raises(ProviderExecutionError, match="embedded credentials"):
+            _validate_url_ssrf("http://user@example.com/", resolver)
 
 
 class TestFetcherSsrfIntegration:

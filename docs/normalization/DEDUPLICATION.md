@@ -18,7 +18,7 @@ All items with the same hash are grouped. The canonical item is selected by the 
 
 Near-duplicate detection applies only to items with `content_length >= 200` characters.
 
-**Tokenization:** `set(re.findall(r'\b\w+\b', content.lower()))` minus pure-numeric tokens (`token.isdigit()`). Removing numeric tokens prevents two items that differ only in numbers (e.g. measurement values) from being incorrectly flagged as duplicates.
+**Tokenization:** `frozenset(re.findall(r'\b\w+\b', content.lower()))`. Numeric tokens are included so that texts differing only in numeric values (e.g. `$10 million` vs `$100 million`, `2024` vs `2025`, `20%` vs `25%`) produce distinct token sets and are not incorrectly collapsed as near-duplicates.
 
 **Jaccard similarity:** `|A ∩ B| / |A ∪ B|`
 

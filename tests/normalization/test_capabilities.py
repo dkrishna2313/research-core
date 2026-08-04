@@ -18,6 +18,15 @@ class TestKnowledgeCapabilityReport:
         report = capability_report_for_knowledge(object())
         assert isinstance(report, CapabilityReport)
 
+    def test_checked_at_in_metadata(self) -> None:
+        from datetime import datetime
+
+        report = capability_report_for_knowledge(object())
+        assert "checked_at" in report.metadata
+        ts = report.metadata["checked_at"]
+        parsed = datetime.fromisoformat(str(ts))
+        assert parsed.tzinfo is not None
+
     def test_adapter_name_is_knowledge_adapter(self) -> None:
         report = capability_report_for_knowledge(object())
         assert report.adapter_name == "KnowledgeAdapter"
@@ -85,3 +94,24 @@ class TestWebCapabilityReport:
         valid = set(CapabilityStatus)
         for cap in report.capabilities:
             assert cap.status in valid
+
+    def test_checked_at_in_metadata(self) -> None:
+        from datetime import datetime
+
+        report = capability_report_for_web(object())
+        assert "checked_at" in report.metadata
+        ts = report.metadata["checked_at"]
+        parsed = datetime.fromisoformat(str(ts))
+        assert parsed.tzinfo is not None
+
+    def test_search_available_with_ddgs(self) -> None:
+        # With ddgs installed, search capability should be available
+        import importlib.util
+        has_ddgs = importlib.util.find_spec("ddgs") is not None
+        has_ddgspy = importlib.util.find_spec("duckduckgo_search") is not None
+        report = capability_report_for_web(object())
+        search_cap = next(c for c in report.capabilities if c.name == "search_provider")
+        if has_ddgs or has_ddgspy:
+            assert search_cap.status == CapabilityStatus.AVAILABLE
+        else:
+            assert search_cap.status == CapabilityStatus.UNAVAILABLE

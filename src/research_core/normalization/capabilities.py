@@ -8,6 +8,7 @@ They only check import availability for optional dependencies.
 from __future__ import annotations
 
 import sys
+from datetime import UTC, datetime
 
 from research_core.normalization.contracts import (
     AdapterCapability,
@@ -37,17 +38,19 @@ def capability_report_for_knowledge(adapter: object) -> CapabilityReport:
     return CapabilityReport(
         adapter_name="KnowledgeAdapter",
         capabilities=capabilities,
-        metadata={"overall": overall},
+        metadata={"overall": overall, "checked_at": datetime.now(UTC).isoformat()},
     )
 
 
 def capability_report_for_web(adapter: object) -> CapabilityReport:
     """Build a capability report for a WebSearchAdapter instance.
 
-    Checks whether ddgs, requests, trafilatura, pypdf, and python-docx (module: docx)
-    are importable. Does not perform any network calls.
+    Checks whether ddgs (or duckduckgo_search), requests, trafilatura, pypdf, and
+    python-docx (module: docx) are importable. Does not perform any network calls.
     """
     search_status = _check_import("ddgs")
+    if search_status == CapabilityStatus.UNAVAILABLE:
+        search_status = _check_import("duckduckgo_search")
     fetcher_status = _check_import("requests")
     html_status = _check_import("trafilatura")
     pdf_status = _check_import("pypdf")
@@ -101,7 +104,7 @@ def capability_report_for_web(adapter: object) -> CapabilityReport:
     return CapabilityReport(
         adapter_name="WebSearchAdapter",
         capabilities=capabilities,
-        metadata={"overall": overall},
+        metadata={"overall": overall, "checked_at": datetime.now(UTC).isoformat()},
     )
 
 

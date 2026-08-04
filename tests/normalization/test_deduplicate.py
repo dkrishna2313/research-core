@@ -126,21 +126,44 @@ class TestNearDeduplication:
         near_dups = [d for d in dups if d.method == "near_duplicate"]
         assert len(near_dups) == 0
 
-    def test_numeric_token_guard(self) -> None:
-        # Items differing only in numbers should have low Jaccard after removing numerics
+    def test_numeric_disagreement_preserved(self) -> None:
+        # Numeric tokens are included so distinct values produce distinct token sets.
         a = "The values are 100 200 300 400 500 and represent measurements taken in the lab."
         b = "The values are 999 888 777 666 555 and represent measurements taken in the lab."
-        # Without guard, Jaccard would be high; with guard (numerics removed), should be very high
-        # This tests that purely-numeric differences don't get removed inappropriately
         items = _normalize_pair(a, b)
         cfg = RankingConfig(near_duplicate_threshold=0.90)
         kept, dups, _ = detect_duplicates(items, cfg)
-        # After removing pure numerics, these should be near-identical in words
-        # Both are the same sentence with only numbers changed, so non-numeric tokens are identical
-        # Therefore Jaccard ~1.0 → should be flagged as near-duplicate
-        near_dup_ids = {d.evidence_id for d in dups if d.method == "near_duplicate"}
-        # At least one should be flagged because removing numerics makes them identical
-        assert len(near_dup_ids) >= 1 or len(kept) == 2  # acceptable either way
+        assert len(kept) == 2, "Items differing only in numeric values must both be kept"
+
+    def test_revenue_numeric_disagreement_preserved(self) -> None:
+        base_a = "Revenue was 10 million dollars in the fiscal year reported by the board. "
+        base_b = "Revenue was 100 million dollars in the fiscal year reported by the board. "
+        a = (base_a * 5).strip()
+        b = (base_b * 5).strip()
+        items = _normalize_pair(a, b)
+        cfg = RankingConfig(near_duplicate_threshold=0.90)
+        kept, dups, _ = detect_duplicates(items, cfg)
+        assert len(kept) == 2, "Revenue disagreement (10M vs 100M) must be preserved"
+
+    def test_percentage_disagreement_preserved(self) -> None:
+        base_a = "The target is 20 percent according to the latest policy document guidance. "
+        base_b = "The target is 25 percent according to the latest policy document guidance. "
+        a = (base_a * 5).strip()
+        b = (base_b * 5).strip()
+        items = _normalize_pair(a, b)
+        cfg = RankingConfig(near_duplicate_threshold=0.90)
+        kept, dups, _ = detect_duplicates(items, cfg)
+        assert len(kept) == 2, "Percentage disagreement (20% vs 25%) must be preserved"
+
+    def test_date_disagreement_preserved(self) -> None:
+        base_a = "The event occurred in 2024 and was reported across multiple major publications. "
+        base_b = "The event occurred in 2025 and was reported across multiple major publications. "
+        a = (base_a * 4).strip()
+        b = (base_b * 4).strip()
+        items = _normalize_pair(a, b)
+        cfg = RankingConfig(near_duplicate_threshold=0.90)
+        kept, dups, _ = detect_duplicates(items, cfg)
+        assert len(kept) == 2, "Date disagreement (2024 vs 2025) must be preserved"
 
     def test_max_comparisons_respected(self) -> None:
         src = make_source()
