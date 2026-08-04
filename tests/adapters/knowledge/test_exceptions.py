@@ -13,6 +13,8 @@ from research_core.exceptions import ProviderExecutionError, ProviderUnavailable
 from research_core.protocols.knowledge import KnowledgeRetrievalRequest
 from tests.conftest import make_research_request
 
+pytestmark = pytest.mark.knowledge
+
 
 def _make_request() -> KnowledgeRetrievalRequest:
     return KnowledgeRetrievalRequest(

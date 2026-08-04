@@ -20,8 +20,12 @@ _DEFAULT_STORE = Path(__file__).parent.parent / "knowledge_store"
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Query the knowledge layer via research-core")
-    parser.add_argument("query", nargs="?", default="SMR deployment barriers", help="Retrieval query")
-    parser.add_argument("--store", type=Path, default=_DEFAULT_STORE, help="Path to knowledge_store")
+    parser.add_argument(
+        "query", nargs="?", default="SMR deployment barriers", help="Retrieval query"
+    )
+    parser.add_argument(
+        "--store", type=Path, default=_DEFAULT_STORE, help="Path to knowledge_store"
+    )
     parser.add_argument("--top-k", type=int, default=10, help="Maximum results to return")
     parser.add_argument("--profile", type=str, default=None, help="Optional profile filter")
     args = parser.parse_args()

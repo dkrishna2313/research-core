@@ -9,6 +9,8 @@ import pytest
 
 knowledge = pytest.importorskip("knowledge", reason="knowledge package (dc-power-agent) required")
 
+pytestmark = pytest.mark.knowledge
+
 from research_core.adapters.knowledge.adapter import KnowledgeAdapter  # noqa: E402
 from research_core.protocols.knowledge import KnowledgeRetrievalRequest  # noqa: E402
 from tests.conftest import make_research_request  # noqa: E402

@@ -11,6 +11,10 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
+pytestmark = pytest.mark.knowledge
+
 
 class TestAdapterModuleImport:
     def test_adapter_module_importable_always(self) -> None:

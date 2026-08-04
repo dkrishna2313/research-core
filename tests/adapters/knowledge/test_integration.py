@@ -23,10 +23,14 @@ KNOWLEDGE_STORE_PATH = Path(
     )
 )
 
-pytestmark = pytest.mark.skipif(
-    not KNOWLEDGE_STORE_PATH.exists(),
-    reason=f"knowledge_store not found at {KNOWLEDGE_STORE_PATH}",
-)
+pytestmark = [
+    pytest.mark.knowledge,
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        not KNOWLEDGE_STORE_PATH.exists(),
+        reason=f"knowledge_store not found at {KNOWLEDGE_STORE_PATH}",
+    ),
+]
 
 from research_core.adapters.knowledge import KnowledgeAdapter  # noqa: E402
 from research_core.protocols.knowledge import (  # noqa: E402

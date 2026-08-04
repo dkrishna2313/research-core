@@ -31,6 +31,10 @@ packages = ["src/research_core"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v"
+markers = [
+    "knowledge: tests for the KnowledgeAdapter and knowledge-layer integration",
+    "integration: tests that require external resources (real knowledge_store, network)",
+]
 
 [tool.ruff]
 src = ["src"]

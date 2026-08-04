@@ -9,6 +9,8 @@ import pytest
 
 knowledge = pytest.importorskip("knowledge", reason="knowledge package (dc-power-agent) required")
 
+pytestmark = pytest.mark.knowledge
+
 from research_core.adapters.knowledge.mapping import (  # noqa: E402
     _LEXICAL_MAX_SCORE,
     map_evidence_item,
