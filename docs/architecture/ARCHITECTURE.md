@@ -1,7 +1,7 @@
 # Architecture — research-core
 
-**Version:** RC0
-**Status:** Conceptual — no engine implementation exists
+**Version:** RC2
+**Status:** RC2 complete — KnowledgeAdapter implemented; engine not yet implemented
 
 ---
 

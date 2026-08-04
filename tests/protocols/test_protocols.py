@@ -16,7 +16,11 @@ from research_core.contracts.gaps import OpenQuestion, ResearchGap
 from research_core.contracts.request import ResearchRequest
 from research_core.contracts.result import ResearchResult, SynthesisResult
 from research_core.protocols.analysis import ClaimExtractor, ContradictionDetector, GapAnalyzer
-from research_core.protocols.knowledge import KnowledgeProvider, KnowledgeRetrievalRequest
+from research_core.protocols.knowledge import (
+    KnowledgeProvider,
+    KnowledgeRetrievalRequest,
+    KnowledgeRetrievalResult,
+)
 from research_core.protocols.profiles import ProfileProvider, ResolvedProfile
 from research_core.protocols.rendering import Renderer
 from research_core.protocols.synthesis import Synthesizer
@@ -28,8 +32,8 @@ from tests.conftest import (
 
 
 class _StubKnowledgeProvider:
-    def retrieve(self, request: KnowledgeRetrievalRequest) -> tuple[EvidenceItem, ...]:
-        return ()
+    def retrieve(self, request: KnowledgeRetrievalRequest) -> KnowledgeRetrievalResult:
+        return KnowledgeRetrievalResult(sources=(), evidence=())
 
 
 class _StubWebSearchProvider:

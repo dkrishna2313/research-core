@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC1
+**Version:** RC2
 
 ---
 
@@ -129,19 +129,23 @@ All acceptance criteria met on `feature/rc1-contracts`. No real retrieval, adapt
 
 ---
 
-## RC2 — Knowledge Adapter
+## RC2 — Knowledge Adapter ✓ COMPLETE
 
 ### Objective
 
-Integrate the external knowledge layer behind the `KnowledgeProvider` protocol. Knowledge retrieval works end-to-end through the provider boundary.
+Implement the production `KnowledgeProvider` adapter connecting `research-core` to the knowledge-layer (`dc-power-agent`). Knowledge retrieval works end-to-end through the provider boundary.
 
 ### Scope
 
-- `KnowledgeAdapter` implementing `KnowledgeProvider`
-- Maps `knowledge.retriever` results to `EvidenceItem` with full provenance
-- `knowledge` package added as an optional dev/integration dependency
-- Provider adapter tests with a real knowledge store fixture
-- Protocol conformance tests
+- `KnowledgeRetrievalResult` dataclass (RC1 contract correction — returns sources + evidence)
+- `KnowledgeAdapter` in `src/research_core/adapters/knowledge/` implementing `KnowledgeProvider`
+- Score normalization from knowledge-layer's `[0, ~2.1]` range to `[0.0, 1.0]`
+- Multi-profile retrieval with per-profile calls, dedup by evidence_id, re-rank
+- Lazy `knowledge` package import — adapter importable without backend installed
+- `research-core[knowledge]` optional dependency in `pyproject.toml`
+- Six test files covering mapping, adapter behaviour, profiles, exceptions, optional dependency, integration
+- `docs/adapters/KNOWLEDGE_ADAPTER.md`
+- `examples/knowledge_adapter_query.py`
 
 ### Non-Scope
 
@@ -151,25 +155,30 @@ Integrate the external knowledge layer behind the `KnowledgeProvider` protocol. 
 
 ### Dependencies
 
-RC1 complete. `knowledge-layer` package available at the configured path.
+RC1 complete. `knowledge-layer` package (`dc-power-agent`) available at the configured path.
 
 ### Deliverables
 
-1. `src/research_core/providers/knowledge_adapter.py`
-2. Provider adapter tests
-3. Protocol conformance test for `KnowledgeAdapter`
-4. `pyproject.toml` optional dependency `research-core[knowledge]`
+1. `src/research_core/adapters/knowledge/adapter.py` — `KnowledgeAdapter`
+2. `src/research_core/adapters/knowledge/mapping.py` — type mapping and score normalization
+3. `tests/adapters/knowledge/` — six test modules, 95 tests
+4. `docs/adapters/KNOWLEDGE_ADAPTER.md`
+5. `examples/knowledge_adapter_query.py`
+6. `pyproject.toml` optional dependency `research-core[knowledge]`
 
 ### Acceptance Criteria
 
-- `KnowledgeAdapter` passes the `KnowledgeProvider` protocol conformance test
+- `KnowledgeAdapter` satisfies the `KnowledgeProvider` protocol (`isinstance` check passes)
 - Retrieved `EvidenceItem` objects have `source_type = "knowledge"` and full provenance
-- Core contracts are not modified by this phase
-- Import boundary tests still pass (no `knowledge.*` in `contracts/`)
+- All retrieval scores normalized to `[0.0, 1.0]`
+- `KnowledgeAdapter` is importable without `knowledge` installed
+- Core contracts not modified except `KnowledgeRetrievalResult` addition (corrects RC1 defect)
+- Import boundary tests still pass; `knowledge.*` not imported at `research_core` module level
+- 301 tests passing, mypy strict clean, ruff clean
 
 ### Exit Criteria
 
-All acceptance criteria met. `KnowledgeAdapter` is importable and functional against a test fixture.
+All acceptance criteria met. `KnowledgeAdapter` is importable and functional against the knowledge_store.
 
 ---
 
