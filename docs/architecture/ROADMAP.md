@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC2
+**Version:** RC3
 
 ---
 
@@ -182,7 +182,7 @@ All acceptance criteria met. `KnowledgeAdapter` is importable and functional aga
 
 ---
 
-## RC3 — Web Search Adapter
+## RC3 — Web Search Adapter ✓ COMPLETE
 
 ### Objective
 
@@ -190,17 +190,18 @@ Wrap the DuckDuckGo web-search and page-acquisition implementation behind the `W
 
 ### Scope
 
-- `DuckDuckGoAdapter` implementing `WebSearchProvider`
-- Web page acquisition, content extraction, and caching
-- Maps web documents to `EvidenceItem` with `source_type = "web"`
-- `ddgs`, `requests`, `trafilatura` as optional adapter dependencies
-- Adapter tests with cached fixtures (no live network calls in CI)
+- `WebSearchAdapter` implementing `WebSearchProvider` backed by DuckDuckGo
+- `WebSearchResult` dataclass (RC3 contract correction — returns sources + evidence)
+- Web page acquisition via `requests`, content extraction via `trafilatura` / `pypdf` / `python-docx`
+- `ddgs`, `requests`, `trafilatura`, `pypdf`, `python-docx` as optional adapter dependencies
+- Optional disk cache (`WebCache`) with atomic writes
+- Full test suite: unit tests require no network; integration tests gated by `RUN_NETWORK_TESTS=1`
 - Protocol conformance tests
 
 ### Non-Scope
 
-- The legacy `research_agent.cli` — must not be imported
-- Web evidence treated as confirmed fact — quality scoring is RC4's responsibility
+- The legacy `research_agent.cli` — not imported
+- Web evidence quality scoring — quality scoring is RC4's responsibility
 
 ### Dependencies
 
@@ -208,22 +209,24 @@ RC1 complete. RC2 optional (independent).
 
 ### Deliverables
 
-1. `src/research_core/providers/duckduckgo_adapter.py`
-2. `src/research_core/providers/web_cache.py` (if not provided by the adapter)
-3. Adapter tests with fixture responses
-4. `pyproject.toml` optional dependency `research-core[web]`
+1. `src/research_core/adapters/web/` — adapter, cache, extractors, fetch, mapping, search, models
+2. `tests/adapters/web/` — ten test modules (481 passing, 9 network-gated)
+3. `docs/adapters/WEB_SEARCH_ADAPTER.md`
+4. `examples/web_search_query.py`
+5. `pyproject.toml` optional dependency `research-core[web]`
 
 ### Acceptance Criteria
 
-- `DuckDuckGoAdapter` passes the `WebSearchProvider` protocol conformance test
-- No live network calls in the test suite (cached fixtures used)
-- Web `EvidenceItem` objects have `source_type = "web"` and URL provenance
-- `research_agent.cli` is not imported anywhere
-- Import boundary tests still pass
+- `WebSearchAdapter` satisfies the `WebSearchProvider` protocol (`isinstance` check passes) ✓
+- Web `EvidenceItem` objects have `source_type = "web"` and URL provenance ✓
+- No live network calls in the default test suite (unit tests use injected stubs) ✓
+- `research_agent.cli` is not imported anywhere ✓
+- Import boundary tests still pass ✓
+- 481 tests passing, mypy strict clean, ruff clean ✓
 
 ### Exit Criteria
 
-All acceptance criteria met. Adapter is functional against fixture responses.
+All acceptance criteria met. `WebSearchAdapter` is importable and functional.
 
 ---
 

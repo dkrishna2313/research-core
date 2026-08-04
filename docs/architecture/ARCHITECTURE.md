@@ -1,7 +1,7 @@
 # Architecture — research-core
 
-**Version:** RC2
-**Status:** RC2 complete — KnowledgeAdapter implemented; engine not yet implemented
+**Version:** RC3
+**Status:** RC3 complete — KnowledgeAdapter and WebSearchAdapter implemented; engine not yet implemented
 
 ---
 

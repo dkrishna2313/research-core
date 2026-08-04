@@ -10,10 +10,11 @@ The protocol is structural (typing.Protocol); no base class is required.
 
 from __future__ import annotations
 
+import types
 from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
-from research_core.contracts.common import EMPTY_METADATA, Metadata
+from research_core.contracts.common import EMPTY_METADATA, Metadata, _to_proxy
 from research_core.contracts.evidence import EvidenceItem
 from research_core.contracts.request import ResearchRequest
 from research_core.contracts.sources import Source
@@ -53,19 +54,40 @@ class WebSearchRequest:
         return self.language if self.language is not None else self.parent_request.language
 
 
+@dataclass(frozen=True)
+class WebSearchResult:
+    """Structured result of a web search operation.
+
+    Bundles sources and evidence so downstream consumers can populate
+    ResearchResult.sources without a second lookup. This resolves the
+    protocol defect where WebSearchProvider returned paired tuples with
+    no clean separation of sources and evidence.
+
+    sources: Source records for all fetched pages, deduplicated by URL.
+    evidence: EvidenceItem objects extracted from pages, ordered by search rank.
+    """
+
+    sources: tuple[Source, ...]
+    evidence: tuple[EvidenceItem, ...]
+    metadata: Metadata = field(default_factory=lambda: EMPTY_METADATA)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.metadata, types.MappingProxyType):
+            object.__setattr__(self, "metadata", _to_proxy(self.metadata))
+
+
 @runtime_checkable
 class WebSearchProvider(Protocol):
     """Structural protocol for a web search and retrieval backend.
 
-    search() returns a tuple of (Source, EvidenceItem) pairs — one per
-    extracted evidence item.  A single page may yield multiple items.
+    search() returns a WebSearchResult bundling both sources and evidence.
+    Sources are deduplicated; evidence items are ordered by search rank.
 
     Implementations should raise ProviderUnavailableError or
     ProviderExecutionError on non-recoverable failures.
+    Zero search matches must return an empty WebSearchResult, not raise.
     """
 
-    def search(
-        self, request: WebSearchRequest
-    ) -> tuple[tuple[Source, EvidenceItem], ...]:
-        """Search the web and return paired (source, evidence) results."""
+    def search(self, request: WebSearchRequest) -> WebSearchResult:
+        """Search the web and return structured sources and evidence."""
         ...

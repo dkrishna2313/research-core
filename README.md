@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC2 — Knowledge Adapter**
+**Status: RC3 — Web Search Adapter**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-RC2 delivers the production `KnowledgeAdapter` that connects `research-core` to the knowledge-layer. The research engine is not yet implemented. All domain contracts and the knowledge adapter are stable and importable.
+RC3 delivers the production `WebSearchAdapter` backed by DuckDuckGo, `requests`, and `trafilatura`. The research engine is not yet implemented. All domain contracts, the knowledge adapter, and the web search adapter are stable and importable.
 
 ---
 
@@ -39,28 +39,37 @@ ResearchRequest
   → ResearchResult
 ```
 
-The contract layer is fully defined and the knowledge adapter is live:
+The contract layer is fully defined. Both the knowledge adapter and the web search adapter are live:
 
 ```python
 from research_core.adapters.knowledge import KnowledgeAdapter
 from research_core.protocols.knowledge import KnowledgeRetrievalRequest
 from research_core import ResearchRequest
 
-# Initialize the adapter (lazy — knowledge package imported on first retrieve())
 adapter = KnowledgeAdapter(store_root="/path/to/knowledge_store")
-
-# Build requests
 request = ResearchRequest(question="What are the deployment risks for SMRs?")
 k_request = KnowledgeRetrievalRequest(
     query="SMR deployment barriers licensing",
     parent_request=request,
     profiles=("smr-general",),
 )
-
-# Retrieve — returns KnowledgeRetrievalResult(sources=..., evidence=...)
 result = adapter.retrieve(k_request)
 print(f"Evidence: {len(result.evidence)} items")
-print(f"Sources:  {len(result.sources)} records")
+```
+
+```python
+from research_core.adapters.web import WebSearchAdapter
+from research_core.protocols.web import WebSearchRequest
+from research_core import ResearchRequest
+
+adapter = WebSearchAdapter()
+request = ResearchRequest(question="What are the deployment risks for SMRs?")
+w_request = WebSearchRequest(
+    query="SMR deployment barriers licensing",
+    parent_request=request,
+)
+result = adapter.search(w_request)
+print(f"Evidence: {len(result.evidence)} items")
 ```
 
 Future public API direction (RC8+):
@@ -84,16 +93,26 @@ The structured result exposes: `sources`, `evidence`, `claims`, `contradictions`
 
 ## Current Phase
 
-**RC2 — Knowledge Adapter**
+**RC3 — Web Search Adapter**
 
 This phase delivers:
+
+- `src/research_core/adapters/web/` — `WebSearchAdapter`, `WebCache`, extractors, fetch, search, mapping
+- `WebSearchResult` (RC3 contract correction) — bundles sources + evidence, same pattern as RC2
+- DuckDuckGo search via `ddgs` or `duckduckgo_search` (lazy import)
+- Page fetching via `requests` with 10 MB limit and streaming (lazy import)
+- Content extraction pipeline: `trafilatura` (HTML), `pypdf` (PDF), `python-docx` (DOCX), plaintext fallback
+- Optional disk cache with atomic writes and base64 for bytes fields
+- `research-core[web]` optional dependency group
+- 481 passing tests (490 collected, 9 skipped — network-gated), zero mypy errors, zero ruff violations
+
+**RC2 deliverables** (still present):
 
 - `src/research_core/adapters/knowledge/` — `KnowledgeAdapter` and type mapping
 - `KnowledgeRetrievalResult` (RC1 contract correction) — bundles sources + evidence
 - Score normalization from knowledge-layer `[0, ~2.1]` to `[0.0, 1.0]`
 - Multi-profile retrieval with deduplication and re-ranking
 - Lazy optional dependency: importable without `knowledge` installed
-- 301 passing tests, zero mypy errors, zero ruff violations
 
 **RC1 deliverables** (still present):
 
@@ -151,6 +170,7 @@ python3 -m mypy src
 | [Dependency Rules](docs/architecture/DEPENDENCY_RULES.md) | Enforceable import constraints |
 | [Roadmap](docs/architecture/ROADMAP.md) | RC0–RC9 phases and acceptance criteria |
 | [Knowledge Adapter](docs/adapters/KNOWLEDGE_ADAPTER.md) | Adapter design, mappings, usage |
+| [Web Search Adapter](docs/adapters/WEB_SEARCH_ADAPTER.md) | Web adapter design, extractors, caching |
 
 ---
 
@@ -173,8 +193,8 @@ python3 -m mypy src
 |---|---|
 | RC0 | Product and Architecture Foundation ✓ |
 | RC1 | Core Contracts and Package Boundary ✓ |
-| RC2 | Knowledge Adapter ← current |
-| RC3 | Web Search Adapter |
+| RC2 | Knowledge Adapter ✓ |
+| RC3 | Web Search Adapter ← current |
 | RC4 | Evidence Normalization and Ranking |
 | RC5 | Claim Extraction and Contradiction Detection |
 | RC6 | Research Gap Analysis and Quality Diagnostics |

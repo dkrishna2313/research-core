@@ -23,7 +23,7 @@ from research_core.protocols.knowledge import (
 from research_core.protocols.profiles import ProfileProvider, ResolvedProfile
 from research_core.protocols.rendering import OutputT_co, Renderer
 from research_core.protocols.synthesis import Synthesizer
-from research_core.protocols.web import WebSearchProvider, WebSearchRequest
+from research_core.protocols.web import WebSearchProvider, WebSearchRequest, WebSearchResult
 
 __all__ = [
     # knowledge
@@ -33,6 +33,7 @@ __all__ = [
     # web
     "WebSearchProvider",
     "WebSearchRequest",
+    "WebSearchResult",
     # profiles
     "ProfileProvider",
     "ResolvedProfile",

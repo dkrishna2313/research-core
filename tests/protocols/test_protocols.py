@@ -7,8 +7,6 @@ properly-shaped objects satisfy isinstance() checks.
 
 from __future__ import annotations
 
-from typing import Any
-
 from research_core.contracts.claims import Claim
 from research_core.contracts.contradictions import Contradiction
 from research_core.contracts.evidence import EvidenceItem
@@ -24,7 +22,7 @@ from research_core.protocols.knowledge import (
 from research_core.protocols.profiles import ProfileProvider, ResolvedProfile
 from research_core.protocols.rendering import Renderer
 from research_core.protocols.synthesis import Synthesizer
-from research_core.protocols.web import WebSearchProvider, WebSearchRequest
+from research_core.protocols.web import WebSearchProvider, WebSearchRequest, WebSearchResult
 from tests.conftest import (
     make_research_request,
     make_synthesis_result,
@@ -37,10 +35,8 @@ class _StubKnowledgeProvider:
 
 
 class _StubWebSearchProvider:
-    def search(
-        self, request: WebSearchRequest
-    ) -> tuple[tuple[Any, EvidenceItem], ...]:
-        return ()
+    def search(self, request: WebSearchRequest) -> WebSearchResult:
+        return WebSearchResult(sources=(), evidence=())
 
 
 class _StubProfileProvider:
