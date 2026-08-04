@@ -68,6 +68,19 @@ from research_core.exceptions import (
     UnknownProfileError,
     UnsupportedConfigurationError,
 )
+from research_core.normalization import (
+    AdapterCapability,
+    CapabilityReport,
+    CapabilityStatus,
+    EvidenceNormalizer,
+    EvidenceRanker,
+    EvidenceRankingResult,
+    NormalizationConfig,
+    NormalizedEvidence,
+    RankedEvidence,
+    RankingConfig,
+    SegmentationConfig,
+)
 from research_core.protocols import (
     ClaimExtractor,
     ContradictionDetector,
@@ -85,7 +98,7 @@ from research_core.protocols import (
     WebSearchResult,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 __all__ = [
     "__version__",
@@ -158,4 +171,16 @@ __all__ = [
     "WebSearchProvider",
     "WebSearchRequest",
     "WebSearchResult",
+    # normalization
+    "AdapterCapability",
+    "CapabilityReport",
+    "CapabilityStatus",
+    "EvidenceNormalizer",
+    "EvidenceRanker",
+    "EvidenceRankingResult",
+    "NormalizationConfig",
+    "NormalizedEvidence",
+    "RankedEvidence",
+    "RankingConfig",
+    "SegmentationConfig",
 ]
