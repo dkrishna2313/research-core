@@ -1,7 +1,11 @@
-# Contracts Reference — RC1
+# Contracts Reference — RC3
 
 `research_core.contracts` defines the typed domain model. These are the objects that flow
 through the pipeline and are returned to callers. No engine logic lives here.
+
+Provider result types (`KnowledgeRetrievalResult`, `WebSearchResult`) live in
+`research_core.protocols` alongside their protocol interfaces, not in `research_core.contracts`.
+They are re-exported from `research_core` for convenience.
 
 ---
 
@@ -220,5 +224,34 @@ ResearchCoreError
 
 ---
 
-*This document covers the RC1 contract layer. See `ARCHITECTURE.md` for the full system
-design and `ROADMAP.md` for the release schedule.*
+## Provider Result Types
+
+Provider result types bundle the outputs of a single provider call and live alongside their protocols in `research_core.protocols`.
+
+### KnowledgeRetrievalResult (added RC2)
+
+```python
+@dataclass(frozen=True)
+class KnowledgeRetrievalResult:
+    sources: tuple[Source, ...]
+    evidence: tuple[EvidenceItem, ...]
+    metadata: Metadata
+```
+
+Returned by `KnowledgeProvider.retrieve()`. Sources are deduplicated by `source_id`. Both fields are required; use empty tuples for an empty retrieval.
+
+### WebSearchResult (added RC3)
+
+```python
+@dataclass(frozen=True)
+class WebSearchResult:
+    sources: tuple[Source, ...]
+    evidence: tuple[EvidenceItem, ...]
+    metadata: Metadata
+```
+
+Returned by `WebSearchProvider.search()`. Zero results is a valid non-error return. Sources are deduplicated by `source_id`. Evidence quality fields are all `None` — quality scoring is introduced in RC4.
+
+---
+
+*See `ARCHITECTURE.md` for the full system design and `ROADMAP.md` for the release schedule.*

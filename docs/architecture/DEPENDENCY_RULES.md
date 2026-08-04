@@ -1,6 +1,6 @@
 # Dependency Rules — research-core
 
-**Version:** RC2
+**Version:** RC3
 **Status:** Normative — these rules are enforced from RC1 onward through import boundary tests
 
 ---
@@ -68,6 +68,15 @@ research_core.adapters.knowledge.adapter
     → research_core.contracts.evidence             (OK — uses core EvidenceItem)
     → knowledge.store                              (OK — narrow external dependency, in adapter only)
     → knowledge.retriever                          (OK — narrow external dependency, in adapter only; lazy import)
+
+research_core.adapters.web.adapter
+    → research_core.protocols.web                  (OK — adapter implements its own protocol)
+    → research_core.contracts.evidence             (OK — uses core EvidenceItem)
+    → ddgs                                         (OK — narrow external dependency, in adapter only; lazy import)
+    → requests                                     (OK — narrow external dependency, in adapter only; lazy import)
+    → trafilatura                                  (OK — narrow external dependency, in adapter only; lazy import)
+    → pypdf                                        (OK — narrow external dependency, in adapter only; lazy import)
+    → docx                                         (OK — narrow external dependency, in adapter only; lazy import)
 
 research_core.analysis.contradiction_detector
     → research_core.contracts.claim                (OK — uses core Claim)
