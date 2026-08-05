@@ -10,7 +10,7 @@ Stage order:
   2. PROFILE_RESOLUTION
   3. RETRIEVAL (knowledge, then web)
   4. EXTRACTION (claims)
-  5. CLAIM_ANALYSIS (contradictions)
+  5. CONTRADICTION_DETECTION
   6. GAP_ANALYSIS
   7. SYNTHESIS
   8. FINALIZATION

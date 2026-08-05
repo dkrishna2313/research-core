@@ -29,11 +29,12 @@ and an ordered list of key findings.
 
 ## Narrative structure
 
-The narrative is:
+The narrative is assembled by joining these parts:
 
-1. A count sentence: _"The research retrieved N evidence item(s) from M source(s), yielding P claim(s)."_
-2. If gaps exist: _"Q research gap(s) were identified."_
-3. A limitations disclaimer: _"This synthesis does not imply verification, corroboration, or truth inference."_
+1. A count sentence: _"The research produced P claim(s) from N evidence item(s) across M source(s). Q research gap(s) were identified."_
+2. If critical or high-severity gaps exist: _"Notable gap(s): X critical, Y high-severity gap(s) require attention."_
+3. If contradictions exist: _"Z contradiction(s) were detected in the evidence. Contradictions are not resolved by this synthesizer."_
+4. A limitations disclaimer: _"This synthesis was produced deterministically from extracted claims and evidence. It does not imply verification, truth, consensus, or corroboration. Claim wording is preserved as extracted. Conflicting claims are not resolved."_
 
 ## Claim ordering
 
@@ -46,7 +47,8 @@ Key findings follow evidence order then claim_id lexicographic order for stabili
 ## Empty evidence
 
 When no evidence was retrieved, the narrative states:
-_"No evidence was retrieved. No claims, gaps, or findings were produced."_
+_"No evidence was retrieved. This synthesis cannot derive claims from the available input. Research gaps indicate missing coverage."_
+followed by the standard limitations disclaimer.
 
 ## Usage
 
