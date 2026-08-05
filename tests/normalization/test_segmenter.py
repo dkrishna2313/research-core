@@ -179,6 +179,66 @@ class TestSegmenterLongContent:
         assert "page 5" in result[0].locator
 
 
+class TestSegmenterContentIdentity:
+    """Content hash is part of the segment ID (RC4 hardening)."""
+
+    def test_content_change_changes_segment_id(self) -> None:
+        cfg = SegmentationConfig(
+            max_characters=500, target_characters=400, overlap_characters=0,
+            minimum_segment_characters=50,
+        )
+        item_a = make_web_evidence(evidence_id="ev-x", content=("A" * 600))
+        item_b = make_web_evidence(evidence_id="ev-x", content=("B" * 600))
+        segs_a = segment_evidence(item_a, cfg)
+        segs_b = segment_evidence(item_b, cfg)
+        assert segs_a[0].evidence_id != segs_b[0].evidence_id
+
+    def test_segment_id_stable_across_calls(self) -> None:
+        cfg = SegmentationConfig(
+            max_characters=500, target_characters=400, overlap_characters=0,
+            minimum_segment_characters=50,
+        )
+        item = make_web_evidence(content=("word " * 400))
+        segs1 = segment_evidence(item, cfg)
+        segs2 = segment_evidence(item, cfg)
+        assert [s.evidence_id for s in segs1] == [s.evidence_id for s in segs2]
+
+    def test_content_hash_stored_in_metadata(self) -> None:
+        import hashlib
+
+        cfg = SegmentationConfig(
+            max_characters=500, target_characters=400, overlap_characters=0,
+            minimum_segment_characters=50,
+        )
+        item = make_web_evidence(content=("word " * 400))
+        segs = segment_evidence(item, cfg)
+        for seg in segs:
+            assert "content_hash" in seg.metadata
+            expected = hashlib.sha256(seg.content.encode()).hexdigest()
+            assert seg.metadata["content_hash"] == expected
+
+    def test_original_evidence_not_mutated(self) -> None:
+        cfg = SegmentationConfig(
+            max_characters=500, target_characters=400, overlap_characters=0,
+            minimum_segment_characters=50,
+        )
+        item = make_web_evidence(evidence_id="ev-orig", content=("word " * 400))
+        segment_evidence(item, cfg)
+        assert item.evidence_id == "ev-orig"
+
+    def test_same_content_different_parent_id_gives_different_seg_id(self) -> None:
+        cfg = SegmentationConfig(
+            max_characters=500, target_characters=400, overlap_characters=0,
+            minimum_segment_characters=50,
+        )
+        content = "word " * 400
+        item_a = make_web_evidence(evidence_id="ev-aaa", content=content)
+        item_b = make_web_evidence(evidence_id="ev-bbb", content=content)
+        segs_a = segment_evidence(item_a, cfg)
+        segs_b = segment_evidence(item_b, cfg)
+        assert segs_a[0].evidence_id != segs_b[0].evidence_id
+
+
 class TestSegmenterParagraphSplitting:
     def test_paragraph_boundaries_respected(self) -> None:
         cfg = SegmentationConfig(

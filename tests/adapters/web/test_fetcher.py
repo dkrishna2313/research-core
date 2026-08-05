@@ -146,6 +146,16 @@ class TestRequestsFetcherSuccessPath:
             result = fetcher.fetch("https://example.com", timeout_seconds=5.0)
         assert result.content == body
 
+    def test_session_trust_env_is_false(self) -> None:
+        fetcher = RequestsFetcher(resolver=FakeResolver())
+        session_cls = _mock_session(content=b"ok")
+        mock_req = _requests_module(session_cls)
+        with patch.object(fetcher, "_import_requests", return_value=mock_req):
+            fetcher.fetch("https://example.com", timeout_seconds=5.0)
+        # The mock session instance is session_cls.return_value
+        session_instance = session_cls.return_value
+        assert session_instance.trust_env is False
+
 
 class TestRequestsFetcherErrors:
     def _make_exc_with_name(self, name: str) -> Exception:

@@ -42,11 +42,21 @@ def capability_report_for_knowledge(adapter: object) -> CapabilityReport:
     )
 
 
-def capability_report_for_web(adapter: object) -> CapabilityReport:
+def capability_report_for_web(
+    adapter: object = None,
+    *,
+    cache_enabled: bool | None = None,
+) -> CapabilityReport:
     """Build a capability report for a WebSearchAdapter instance.
 
     Checks whether ddgs (or duckduckgo_search), requests, trafilatura, pypdf, and
     python-docx (module: docx) are importable. Does not perform any network calls.
+
+    Args:
+        adapter: Unused; accepted for backward compatibility with call sites that
+            pass the adapter instance as a positional argument.
+        cache_enabled: Whether disk caching is active. True → AVAILABLE,
+            False → DEGRADED (support exists but disabled), None → UNKNOWN.
     """
     search_status = _check_import("ddgs")
     if search_status == CapabilityStatus.UNAVAILABLE:
@@ -82,6 +92,16 @@ def capability_report_for_web(adapter: object) -> CapabilityReport:
             status=docx_status,
             description="DOCX text extraction via python-docx",
         ),
+        AdapterCapability(
+            name="plain_text_extraction",
+            status=CapabilityStatus.AVAILABLE,
+            description="Plain-text decoding via built-in charset detection (no extra dependency)",
+        ),
+        AdapterCapability(
+            name="cache",
+            status=_cache_status(cache_enabled),
+            description=_cache_description(cache_enabled),
+        ),
     )
 
     core_missing = (
@@ -106,6 +126,22 @@ def capability_report_for_web(adapter: object) -> CapabilityReport:
         capabilities=capabilities,
         metadata={"overall": overall, "checked_at": datetime.now(UTC).isoformat()},
     )
+
+
+def _cache_status(cache_enabled: bool | None) -> CapabilityStatus:
+    if cache_enabled is True:
+        return CapabilityStatus.AVAILABLE
+    if cache_enabled is False:
+        return CapabilityStatus.DEGRADED
+    return CapabilityStatus.UNKNOWN
+
+
+def _cache_description(cache_enabled: bool | None) -> str:
+    if cache_enabled is True:
+        return "cache is configured and enabled"
+    if cache_enabled is False:
+        return "cache support exists but caching is not enabled"
+    return "cache support exists; active configuration was not provided"
 
 
 def _check_import(module_name: str) -> CapabilityStatus:

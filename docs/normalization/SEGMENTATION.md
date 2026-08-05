@@ -16,13 +16,17 @@ The segmenter splits `EvidenceItem` objects whose content exceeds `SegmentationC
 
 ## Segment IDs
 
-Each segment receives a stable, deterministic ID:
+Each segment receives a stable, deterministic ID (as of RC4 hardening):
 
 ```
-"seg-" + sha256(parent_id + "\x00" + source_id + "\x00" + str(idx) + "\x00" + version)[:16]
+"seg-" + sha256(parent_id + "\x00" + source_id + "\x00" + str(idx) + "\x00" + version + "\x00" + content_hash)[:16]
 ```
 
-Incrementing `SegmentationConfig.version` invalidates all existing segment IDs. This is intentional — if segmentation logic changes, downstream consumers using segment IDs as cache keys will correctly cache-miss.
+where `content_hash = sha256(segment_text.encode()).hexdigest()`.
+
+Including the segment content hash means two segments at the same position but with different content produce different IDs. Segment IDs generated before the RC4 hardening will differ from those generated after — any downstream cache keyed on segment IDs must be invalidated when upgrading.
+
+Incrementing `SegmentationConfig.version` also invalidates all existing segment IDs. This is intentional — if segmentation logic changes, downstream consumers using segment IDs as cache keys will correctly cache-miss.
 
 ## Configuration
 
@@ -56,5 +60,6 @@ Each segment's `metadata` contains:
 | `segment_index` | int | 0-based index within the parent item |
 | `segment_count` | int | Total number of segments for this parent |
 | `parent_evidence_id` | str | `evidence_id` of the unsegmented parent |
+| `content_hash` | str | SHA-256 hex digest of the segment text |
 
 The `NormalizedEvidence` wrapper elevates these into first-class fields (`segment_index`, `segment_count`, `parent_evidence_id`).

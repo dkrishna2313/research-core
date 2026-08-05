@@ -115,3 +115,33 @@ class TestWebCapabilityReport:
             assert search_cap.status == CapabilityStatus.AVAILABLE
         else:
             assert search_cap.status == CapabilityStatus.UNAVAILABLE
+
+    def test_has_plain_text_extraction_capability(self) -> None:
+        report = capability_report_for_web()
+        names = {c.name for c in report.capabilities}
+        assert "plain_text_extraction" in names
+
+    def test_plain_text_extraction_always_available(self) -> None:
+        report = capability_report_for_web()
+        cap = next(c for c in report.capabilities if c.name == "plain_text_extraction")
+        assert cap.status == CapabilityStatus.AVAILABLE
+
+    def test_has_cache_capability(self) -> None:
+        report = capability_report_for_web()
+        names = {c.name for c in report.capabilities}
+        assert "cache" in names
+
+    def test_cache_unknown_by_default(self) -> None:
+        report = capability_report_for_web()
+        cap = next(c for c in report.capabilities if c.name == "cache")
+        assert cap.status == CapabilityStatus.UNKNOWN
+
+    def test_cache_available_when_enabled(self) -> None:
+        report = capability_report_for_web(cache_enabled=True)
+        cap = next(c for c in report.capabilities if c.name == "cache")
+        assert cap.status == CapabilityStatus.AVAILABLE
+
+    def test_cache_degraded_when_disabled(self) -> None:
+        report = capability_report_for_web(cache_enabled=False)
+        cap = next(c for c in report.capabilities if c.name == "cache")
+        assert cap.status == CapabilityStatus.DEGRADED

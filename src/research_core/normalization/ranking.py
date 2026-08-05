@@ -13,6 +13,7 @@ Tie-breaking is fully deterministic:
 
 from __future__ import annotations
 
+from research_core.contracts.common import SourceType
 from research_core.normalization.config import RankingConfig
 from research_core.normalization.contracts import (
     ComponentStatus,
@@ -27,19 +28,54 @@ from research_core.normalization.contracts import (
 
 _DEFAULT_CONFIG = RankingConfig()
 
-# Fields counted for provenance completeness
-_PROVENANCE_FIELDS = (
+# Provenance completeness is provider-aware: each provider type has its own
+# expected field set so that naturally absent fields (e.g. retrieval_score for
+# DDGS web results, url for knowledge store documents) are not penalised.
+
+_COMMON_PROVENANCE_FIELDS: tuple[str, ...] = (
     "provider",
     "retrieval_query",
+    "content_hash",
+)
+
+# Knowledge: retrieval_score is provided; url is not expected.
+_KNOWLEDGE_PROVENANCE_FIELDS: tuple[str, ...] = (
     "retrieval_rank",
     "retrieval_score",
     "extraction_method",
-    "extraction_confidence",
-    "content_hash",
-    "url",
-    "document_id",
 )
-_NUM_PROVENANCE_FIELDS = len(_PROVENANCE_FIELDS)
+
+# Web: url is provided; retrieval_score is not (DDGS has no documented relevance score).
+_WEB_PROVENANCE_FIELDS: tuple[str, ...] = (
+    "url",
+    "retrieval_rank",
+    "extraction_method",
+)
+
+# Fallback for unknown source types — conservative minimal set.
+_FALLBACK_PROVENANCE_FIELDS: tuple[str, ...] = (
+    "retrieval_rank",
+)
+
+
+def _applicable_fields(source_type: SourceType | str) -> tuple[str, ...]:
+    if source_type == SourceType.KNOWLEDGE:
+        return _COMMON_PROVENANCE_FIELDS + _KNOWLEDGE_PROVENANCE_FIELDS
+    if source_type == SourceType.WEB:
+        return _COMMON_PROVENANCE_FIELDS + _WEB_PROVENANCE_FIELDS
+    return _COMMON_PROVENANCE_FIELDS + _FALLBACK_PROVENANCE_FIELDS
+
+
+def _field_is_present(value: object) -> bool:
+    """Return True if value counts as a present provenance field.
+
+    None and empty/whitespace-only strings are absent. Numeric zero is present.
+    """
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
 
 
 def rank_evidence(
@@ -107,10 +143,9 @@ def _extract_raw_values(item: NormalizedEvidence) -> dict[str, float | None]:
     prov = item.evidence.provenance
     quality = item.evidence.quality
 
-    completeness_count = sum(
-        1 for f in _PROVENANCE_FIELDS if getattr(prov, f, None) is not None
-    )
-    completeness = completeness_count / _NUM_PROVENANCE_FIELDS
+    applicable = _applicable_fields(prov.source_type)
+    present = sum(1 for f in applicable if _field_is_present(getattr(prov, f, None)))
+    completeness = present / len(applicable)
 
     return {
         "retrieval": item.normalized_retrieval_signal,

@@ -86,6 +86,19 @@ Total search-provider failure (DDGS unavailable, unexpected exception) raises `P
 - **Deduplication**: hits are deduplicated by normalized URL before fetching.
 - **Deterministic IDs**: `source_id = "web-" + sha256(url)[:16]`, `evidence_id = "web-ev-" + sha256(url + "\x00" + content[:200])[:16]`.
 
+### Proxy and environment isolation
+
+The internally created `requests.Session` sets `trust_env = False` immediately after construction. This disables automatic use of:
+
+- `HTTP_PROXY`, `HTTPS_PROXY`, `ALL_PROXY`, `NO_PROXY` environment variables
+- `.netrc` credentials
+
+Default page fetches are therefore direct connections — environment proxy configuration does not influence routing. No explicit proxy feature exists. There is no way to inject a proxy through environment variables when using the default fetcher.
+
+**Residual risk:** All SSRF validation occurs at DNS resolution time (before TCP connection). An attacker controlling DNS can serve a valid IP on the first resolution and route the actual TCP connection elsewhere (DNS rebinding). Setting `trust_env = False` eliminates one attack surface (proxy tunneling) but does not eliminate this residual DNS-based risk. `trust_env = False` improves determinism and prevents environment-level bypasses, but SSRF protection cannot be described as complete.
+
+If a caller injects a custom `page_fetcher`, the caller is responsible for its session configuration.
+
 ### Response size limit
 
 Responses are streamed with `iter_content(chunk_size=8192)` and truncated at 10 MB. A `truncated=True` flag is set on the `FetchedResource`. The truncated content is still processed normally.
