@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC3
+**Version:** RC5
 
 ---
 
@@ -230,7 +230,7 @@ All acceptance criteria met. `WebSearchAdapter` is importable and functional.
 
 ---
 
-## RC4 — Evidence Normalization and Ranking
+## RC4 — Evidence Normalization and Ranking ✓ COMPLETE
 
 ### Objective
 
@@ -276,24 +276,30 @@ All acceptance criteria met. Normalizer and ranker are independently testable.
 
 ---
 
-## RC5 — Claim Extraction and Contradiction Detection
+## RC5 — Claim Extraction ✓ COMPLETE
 
 ### Objective
 
-Extract discrete claims from the ranked evidence pool and detect explicit contradictions.
+Extract discrete claims from the ranked evidence pool. Deterministic, provider-neutral, no LLM calls.
 
 ### Scope
 
-- `ClaimExtractor` — rule-based baseline; LLM-assisted path optional
-- `ContradictionDetector` — rule-based baseline for numeric and temporal conflicts; LLM-assisted path optional
-- All eight contradiction types documented in the architecture are representable
-- Contradiction objects include: conflicting items, conflict type, severity, resolution status
-- Deterministic fixture tests
+- `research_core.claims` package: contracts, config, extractor, candidate segmentation, classification, deduplication
+- `DeterministicClaimExtractor` — rule-based, no LLM, no network
+- Sentence segmentation, clause splitting, assertiveness filter
+- Claim type, modality, polarity, quantitative/temporal/attribution extraction
+- Exact deduplication (same-parent overlap, same evidence, cross-source preserved)
+- Full diagnostics with count reconciliation
+- 17 test modules in `tests/claims/`, pytest marker `claims`
+- `docs/claims/CLAIM_EXTRACTION.md` and `docs/claims/CLAIM_CONTRACTS.md`
+- `examples/extract_claims.py`
 
 ### Non-Scope
 
+- Contradiction detection (deferred to RC6)
 - Gap analysis
 - Synthesis
+- LLM-assisted extraction
 
 ### Dependencies
 
@@ -301,23 +307,24 @@ RC4 complete.
 
 ### Deliverables
 
-1. `src/research_core/analysis/claim_extractor.py`
-2. `src/research_core/analysis/contradiction_detector.py`
-3. Tests covering all eight contradiction types
-4. Protocol conformance tests for both analysis services
+1. `src/research_core/claims/` — full package
+2. `tests/claims/` — 17 test modules
+3. `docs/claims/CLAIM_EXTRACTION.md`
+4. `docs/claims/CLAIM_CONTRACTS.md`
+5. `examples/extract_claims.py`
 
 ### Acceptance Criteria
 
-- Claims are distinct from evidence items (no conflation)
-- Each claim references its supporting evidence IDs
-- Contradictions are represented as `Contradiction` objects, not prose
-- All eight contradiction types produce representable output
-- No contradiction is silently absorbed into the claim list
-- Import boundary tests still pass
+- Claims are distinct from evidence items (no conflation) ✓
+- Each claim references its supporting evidence IDs ✓
+- Extraction is deterministic for identical input ✓
+- No LLM, network, or NLP library imports in claims package ✓
+- Import boundary tests pass ✓
+- `mypy --strict` clean, ruff clean ✓
 
 ### Exit Criteria
 
-All acceptance criteria met. Both analysis services are independently testable with deterministic fixtures.
+All acceptance criteria met. `DeterministicClaimExtractor` is independently testable with deterministic fixtures.
 
 ---
 

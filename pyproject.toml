@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-core"
-version = "0.4.0"
-description = "Domain-neutral research library — RC4 evidence normalization and ranking"
+version = "0.5.0"
+description = "Domain-neutral research library — RC5 claim extraction"
 readme = "README.md"
 # Python 3.11 minimum: match-statement syntax and tomllib are stable,
 # typing improvements (Self, TypeVarTuple, ParamSpec, LiteralString) are
@@ -47,6 +47,7 @@ markers = [
     "integration: tests that require external resources (real knowledge_store, network)",
     "network: tests that require live network access",
     "normalization: tests for the evidence normalization and ranking pipeline",
+    "claims: tests for the RC5 claim extraction pipeline",
 ]
 
 [tool.ruff]
