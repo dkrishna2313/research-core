@@ -172,3 +172,92 @@ def test_protocol_conformance() -> None:
     from research_core.claims import ClaimExtractor
 
     assert isinstance(extractor, ClaimExtractor)
+
+
+# ---------------------------------------------------------------------------
+# Regression: b66e46e — too-long rejection (candidate_text truncation + reason)
+# ---------------------------------------------------------------------------
+
+
+def test_too_long_claim_rejected_with_too_long_reason() -> None:
+    """A candidate exceeding maximum_claim_characters must be rejected as TOO_LONG."""
+    cfg = ClaimExtractionConfig(
+        maximum_claim_characters=50,
+        include_rejections=True,
+    )
+    # 80 chars — well above the 50-char ceiling
+    long_content = "Revenue increased significantly because demand rose across all major markets."
+    ranked = make_ranked_evidence(content=long_content)
+    result = extractor.extract([ranked], config=cfg)
+
+    from research_core.claims.contracts import RejectionReason
+
+    too_long = [r for r in result.rejections if r.reason == RejectionReason.TOO_LONG]
+    assert too_long, "Expected at least one TOO_LONG rejection"
+
+    # Must not be misclassified as TOO_SHORT
+    too_short = [r for r in result.rejections if r.reason == RejectionReason.TOO_SHORT]
+    assert not too_short, "Long candidate must not be rejected as TOO_SHORT"
+
+
+def test_too_long_candidate_text_truncated_to_maximum() -> None:
+    """candidate_text in a TOO_LONG rejection must be truncated to maximum_claim_characters."""
+    max_chars = 50
+    cfg = ClaimExtractionConfig(
+        maximum_claim_characters=max_chars,
+        include_rejections=True,
+    )
+    long_content = "Revenue increased significantly because demand rose across all major markets."
+    ranked = make_ranked_evidence(content=long_content)
+    result = extractor.extract([ranked], config=cfg)
+
+    from research_core.claims.contracts import RejectionReason
+
+    for rej in result.rejections:
+        if rej.reason == RejectionReason.TOO_LONG:
+            assert len(rej.candidate_text) == max_chars, (
+                f"Expected candidate_text length {max_chars}, got {len(rej.candidate_text)}"
+            )
+
+
+def test_too_long_rejection_has_valid_offsets() -> None:
+    """A TOO_LONG rejection must carry non-negative start < end offsets."""
+    cfg = ClaimExtractionConfig(maximum_claim_characters=50, include_rejections=True)
+    long_content = "Revenue increased significantly because demand rose across all major markets."
+    ranked = make_ranked_evidence(content=long_content)
+    result = extractor.extract([ranked], config=cfg)
+
+    from research_core.claims.contracts import RejectionReason
+
+    for rej in result.rejections:
+        if rej.reason == RejectionReason.TOO_LONG:
+            assert rej.start_char >= 0
+            assert rej.end_char > rej.start_char
+
+
+def test_too_long_rejection_appears_in_diagnostics() -> None:
+    """A TOO_LONG rejection must be counted under rejection_reasons in diagnostics."""
+    cfg = ClaimExtractionConfig(maximum_claim_characters=50, include_rejections=True)
+    long_content = "Revenue increased significantly because demand rose across all major markets."
+    ranked = make_ranked_evidence(content=long_content)
+    result = extractor.extract([ranked], config=cfg)
+
+    from research_core.claims.contracts import RejectionReason
+
+    diag_reasons = dict(result.diagnostics.rejection_reasons)
+    assert diag_reasons.get(RejectionReason.TOO_LONG, 0) >= 1, (
+        "diagnostics.rejection_reasons must count TOO_LONG rejections"
+    )
+
+
+def test_too_long_candidate_not_in_extracted_claims() -> None:
+    """A candidate exceeding maximum_claim_characters must not appear among extracted claims."""
+    cfg = ClaimExtractionConfig(maximum_claim_characters=50, include_rejections=True)
+    long_content = "Revenue increased significantly because demand rose across all major markets."
+    ranked = make_ranked_evidence(content=long_content)
+    result = extractor.extract([ranked], config=cfg)
+
+    for claim in result.claims:
+        assert len(claim.claim_text) <= 50, (
+            f"Claim text length {len(claim.claim_text)} exceeds maximum_claim_characters=50"
+        )
