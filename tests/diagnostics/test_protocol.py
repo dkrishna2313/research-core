@@ -32,7 +32,7 @@ class TestGapAnalyzerProtocol:
 
     def test_custom_class_compliant_with_analyze(self) -> None:
         from collections.abc import Sequence
-        from research_core.analysis.contracts import GapAnalysisResult
+
         from research_core.claims.contracts import ExtractedClaim
         from research_core.contracts.sources import Source
         from research_core.normalization.contracts import (

@@ -144,13 +144,14 @@ class CoverageDiagnostics:
                 raise ContractValidationError(
                     f"CoverageDiagnostics.{name} must be >= 0, got {val}"
                 )
-        for name, val in (
+        for ratio_name, ratio_val in (
             ("claim_coverage_ratio", self.claim_coverage_ratio),
             ("evidence_utilization_ratio", self.evidence_utilization_ratio),
         ):
-            if val is not None and not 0.0 <= val <= 1.0:
+            if ratio_val is not None and not 0.0 <= ratio_val <= 1.0:
                 raise ContractValidationError(
-                    f"CoverageDiagnostics.{name} must be in [0,1] when not None, got {val}"
+                    f"CoverageDiagnostics.{ratio_name} must be in [0,1] "
+                    f"when not None, got {ratio_val}"
                 )
 
 

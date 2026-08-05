@@ -10,12 +10,10 @@ import pytest
 
 from research_core.analysis.aggregate import compute_evidence_conditions
 from research_core.contracts.common import _to_proxy
-
 from tests.diagnostics.conftest import make_evidence, make_ranked_evidence, make_source
 
 
 def _truncated_ranked_evidence(evidence_id: str = "ev-trunc", rank: int = 1) -> Any:
-    from research_core.contracts.common import SourceType
     from research_core.normalization.contracts import (
         ComponentStatus,
         NormalizedEvidence,

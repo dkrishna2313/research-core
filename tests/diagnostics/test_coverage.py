@@ -7,7 +7,6 @@ from __future__ import annotations
 import pytest
 
 from research_core.analysis.aggregate import compute_coverage
-
 from tests.diagnostics.conftest import make_claim, make_ranked_evidence, make_source
 
 

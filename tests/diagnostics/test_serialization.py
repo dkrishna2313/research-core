@@ -68,7 +68,6 @@ class TestQualityDimensionSummarySerializes:
 @pytest.mark.diagnostics
 class TestGapAnalysisResultSerializes:
     def test_result_json_serializable(self) -> None:
-        from tests.diagnostics.conftest import make_ranked_evidence, make_source
 
         analyzer = DeterministicGapAnalyzer()
         cfg = GapAnalysisConfig()

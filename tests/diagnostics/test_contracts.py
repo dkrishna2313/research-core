@@ -20,116 +20,114 @@ from research_core.contracts.common import EMPTY_METADATA
 from research_core.contracts.result import ResearchStatus
 from research_core.exceptions import ContractValidationError
 
-from tests.diagnostics.conftest import make_source
-
 
 def _make_coverage(**kwargs: object) -> CoverageDiagnostics:
-    defaults = dict(
-        source_count=1,
-        evidence_count=2,
-        ranked_evidence_count=2,
-        claim_count=1,
-        claims_with_evidence=1,
-        claims_without_evidence=0,
-        evidence_with_claims=1,
-        evidence_without_claims=1,
-        unique_parent_evidence_count=0,
-        segmented_evidence_count=0,
-        sources_with_claims=1,
-        sources_without_claims=0,
-        claim_coverage_ratio=1.0,
-        evidence_utilization_ratio=0.5,
-    )
+    defaults = {
+        "source_count": 1,
+        "evidence_count": 2,
+        "ranked_evidence_count": 2,
+        "claim_count": 1,
+        "claims_with_evidence": 1,
+        "claims_without_evidence": 0,
+        "evidence_with_claims": 1,
+        "evidence_without_claims": 1,
+        "unique_parent_evidence_count": 0,
+        "segmented_evidence_count": 0,
+        "sources_with_claims": 1,
+        "sources_without_claims": 0,
+        "claim_coverage_ratio": 1.0,
+        "evidence_utilization_ratio": 0.5,
+    }
     defaults.update(kwargs)
     return CoverageDiagnostics(**defaults)  # type: ignore[arg-type]
 
 
 def _make_ev_conditions(**kwargs: object) -> EvidenceConditionDiagnostics:
-    defaults = dict(
-        truncated_evidence_count=0,
-        duplicate_evidence_count=0,
-        near_duplicate_evidence_count=0,
-        missing_retrieval_score_count=0,
-        missing_retrieval_rank_count=0,
-        invalid_lineage_count=0,
-    )
+    defaults = {
+        "truncated_evidence_count": 0,
+        "duplicate_evidence_count": 0,
+        "near_duplicate_evidence_count": 0,
+        "missing_retrieval_score_count": 0,
+        "missing_retrieval_rank_count": 0,
+        "invalid_lineage_count": 0,
+    }
     defaults.update(kwargs)
     return EvidenceConditionDiagnostics(**defaults)  # type: ignore[arg-type]
 
 
 def _make_distribution(**kwargs: object) -> DistributionDiagnostics:
-    defaults = dict(
-        unique_source_count=1,
-        unique_provider_count=1,
-        largest_source_share=1.0,
-        largest_provider_share=1.0,
-        source_diversity_score=0.0,
-        provider_diversity_score=0.0,
-        evidence_per_source=EMPTY_METADATA,
-        evidence_per_provider=EMPTY_METADATA,
-    )
+    defaults = {
+        "unique_source_count": 1,
+        "unique_provider_count": 1,
+        "largest_source_share": 1.0,
+        "largest_provider_share": 1.0,
+        "source_diversity_score": 0.0,
+        "provider_diversity_score": 0.0,
+        "evidence_per_source": EMPTY_METADATA,
+        "evidence_per_provider": EMPTY_METADATA,
+    }
     defaults.update(kwargs)
     return DistributionDiagnostics(**defaults)  # type: ignore[arg-type]
 
 
 def _make_dim_summary(**kwargs: object) -> QualityDimensionSummary:
-    defaults = dict(
-        dimension="relevance",
-        status=DiagnosticStatus.PASS,
-        measured_count=2,
-        missing_count=0,
-        minimum=0.5,
-        maximum=0.9,
-        mean=0.7,
-        median=0.7,
-        threshold=0.3,
-        below_threshold_count=0,
-        affected_evidence_ids=(),
-        metadata=EMPTY_METADATA,
-    )
+    defaults = {
+        "dimension": "relevance",
+        "status": DiagnosticStatus.PASS,
+        "measured_count": 2,
+        "missing_count": 0,
+        "minimum": 0.5,
+        "maximum": 0.9,
+        "mean": 0.7,
+        "median": 0.7,
+        "threshold": 0.3,
+        "below_threshold_count": 0,
+        "affected_evidence_ids": (),
+        "metadata": EMPTY_METADATA,
+    }
     defaults.update(kwargs)
     return QualityDimensionSummary(**defaults)  # type: ignore[arg-type]
 
 
 def _make_quality_result(**kwargs: object) -> QualityDiagnosticsResult:
-    defaults = dict(
-        overall_status=DiagnosticStatus.PASS,
-        overall_score=0.7,
-        dimensions=(),
-        coverage=_make_coverage(),
-        distribution=_make_distribution(),
-        evidence_conditions=_make_ev_conditions(),
-        gap_count=0,
-        critical_gap_count=0,
-        high_gap_count=0,
-        configuration_fingerprint="abc123",
-        analyzer="DeterministicGapAnalyzer",
-        analyzer_version="1",
-        metadata=EMPTY_METADATA,
-    )
+    defaults = {
+        "overall_status": DiagnosticStatus.PASS,
+        "overall_score": 0.7,
+        "dimensions": (),
+        "coverage": _make_coverage(),
+        "distribution": _make_distribution(),
+        "evidence_conditions": _make_ev_conditions(),
+        "gap_count": 0,
+        "critical_gap_count": 0,
+        "high_gap_count": 0,
+        "configuration_fingerprint": "abc123",
+        "analyzer": "DeterministicGapAnalyzer",
+        "analyzer_version": "1",
+        "metadata": EMPTY_METADATA,
+    }
     defaults.update(kwargs)
     return QualityDiagnosticsResult(**defaults)  # type: ignore[arg-type]
 
 
 def _make_run_diagnostics(**kwargs: object) -> GapAnalysisDiagnostics:
-    defaults = dict(
-        input_source_count=1,
-        input_evidence_count=2,
-        input_ranked_evidence_count=2,
-        input_claim_count=1,
-        conditions_evaluated=5,
-        conditions_passed=4,
-        conditions_failed=1,
-        conditions_indeterminate=0,
-        conditions_unavailable=0,
-        gaps_emitted=1,
-        gaps_by_category=EMPTY_METADATA,
-        gaps_by_severity=EMPTY_METADATA,
-        configuration_fingerprint="abc123",
-        analyzer="DeterministicGapAnalyzer",
-        analyzer_version="1",
-        metadata=EMPTY_METADATA,
-    )
+    defaults = {
+        "input_source_count": 1,
+        "input_evidence_count": 2,
+        "input_ranked_evidence_count": 2,
+        "input_claim_count": 1,
+        "conditions_evaluated": 5,
+        "conditions_passed": 4,
+        "conditions_failed": 1,
+        "conditions_indeterminate": 0,
+        "conditions_unavailable": 0,
+        "gaps_emitted": 1,
+        "gaps_by_category": EMPTY_METADATA,
+        "gaps_by_severity": EMPTY_METADATA,
+        "configuration_fingerprint": "abc123",
+        "analyzer": "DeterministicGapAnalyzer",
+        "analyzer_version": "1",
+        "metadata": EMPTY_METADATA,
+    }
     defaults.update(kwargs)
     return GapAnalysisDiagnostics(**defaults)  # type: ignore[arg-type]
 

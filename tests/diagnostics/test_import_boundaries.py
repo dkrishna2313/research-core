@@ -6,7 +6,6 @@ no cross-package imports that violate layering.
 from __future__ import annotations
 
 import importlib
-import sys
 
 import pytest
 
@@ -43,7 +42,7 @@ class TestNoCircularImports:
     def test_contracts_not_depend_on_analyzer(self) -> None:
         import research_core.analysis.contracts as contracts_mod
 
-        assert "research_core.analysis.analyzer" not in sys.modules or True
+        assert True
         # Verify contracts module exists and is importable without analyzer
         assert hasattr(contracts_mod, "GapAnalysisResult")
 

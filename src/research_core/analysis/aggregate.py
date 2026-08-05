@@ -90,11 +90,18 @@ def compute_distribution(
 
     total = len(ranked_evidence)
 
+    largest_source_share: float | None
+    largest_provider_share: float | None
+    source_diversity: float | None
+    provider_diversity: float | None
+
     if total > 0:
-        largest_source_share: float | None = max(ev_by_source.values()) / total
-        largest_provider_share: float | None = max(ev_by_provider.values()) / total
-        source_diversity: float | None = 1.0 - largest_source_share
-        provider_diversity: float | None = 1.0 - largest_provider_share
+        _lss: float = max(ev_by_source.values()) / total
+        _lps: float = max(ev_by_provider.values()) / total
+        largest_source_share = _lss
+        largest_provider_share = _lps
+        source_diversity = 1.0 - _lss
+        provider_diversity = 1.0 - _lps
     else:
         largest_source_share = None
         largest_provider_share = None

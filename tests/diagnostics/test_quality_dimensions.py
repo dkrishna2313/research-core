@@ -14,8 +14,7 @@ from research_core.analysis.quality import (
     compute_overall_score,
     score_all_dimensions,
 )
-
-from tests.diagnostics.conftest import make_claim, make_ranked_evidence, make_source
+from tests.diagnostics.conftest import make_ranked_evidence, make_source
 
 
 @pytest.mark.diagnostics
@@ -24,7 +23,10 @@ class TestScoredDimensions:
         assert len(SCORED_DIMENSIONS) == 5
 
     def test_required_dimensions_present(self) -> None:
-        required = {"relevance", "authority", "recency", "extraction_confidence", "provenance_completeness"}
+        required = {
+            "relevance", "authority", "recency",
+            "extraction_confidence", "provenance_completeness",
+        }
         assert required == set(SCORED_DIMENSIONS)
 
 

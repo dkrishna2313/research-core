@@ -47,66 +47,66 @@ class TestMakeGapId:
         assert len(gap_id) == 24
 
     def test_same_inputs_same_id(self) -> None:
-        kwargs = dict(
-            gap_type=GapType.NO_EVIDENCE,
-            severity=GapSeverity.CRITICAL,
-            status=DiagnosticStatus.FAIL,
-            observed_value=0.0,
-            threshold_value=2.0,
-            affected_source_ids=("src-1",),
-            affected_evidence_ids=("ev-1",),
-            affected_claim_ids=(),
-            analyzer_version="1",
-            config_fingerprint="test-fp",
-        )
+        kwargs = {
+            "gap_type": GapType.NO_EVIDENCE,
+            "severity": GapSeverity.CRITICAL,
+            "status": DiagnosticStatus.FAIL,
+            "observed_value": 0.0,
+            "threshold_value": 2.0,
+            "affected_source_ids": ("src-1",),
+            "affected_evidence_ids": ("ev-1",),
+            "affected_claim_ids": (),
+            "analyzer_version": "1",
+            "config_fingerprint": "test-fp",
+        }
         id1 = _make_gap_id(**kwargs)
         id2 = _make_gap_id(**kwargs)
         assert id1 == id2
 
     def test_different_types_different_ids(self) -> None:
-        common = dict(
-            severity=GapSeverity.HIGH,
-            status=DiagnosticStatus.FAIL,
-            observed_value=0.5,
-            threshold_value=1.0,
-            affected_source_ids=(),
-            affected_evidence_ids=(),
-            affected_claim_ids=(),
-            analyzer_version="1",
-            config_fingerprint="fp",
-        )
+        common = {
+            "severity": GapSeverity.HIGH,
+            "status": DiagnosticStatus.FAIL,
+            "observed_value": 0.5,
+            "threshold_value": 1.0,
+            "affected_source_ids": (),
+            "affected_evidence_ids": (),
+            "affected_claim_ids": (),
+            "analyzer_version": "1",
+            "config_fingerprint": "fp",
+        }
         id1 = _make_gap_id(gap_type=GapType.NO_EVIDENCE, **common)
         id2 = _make_gap_id(gap_type=GapType.INSUFFICIENT_COVERAGE, **common)
         assert id1 != id2
 
     def test_different_evidence_ids_different_gap_ids(self) -> None:
-        common = dict(
-            gap_type=GapType.NO_EVIDENCE,
-            severity=GapSeverity.CRITICAL,
-            status=DiagnosticStatus.FAIL,
-            observed_value=0.0,
-            threshold_value=2.0,
-            affected_source_ids=(),
-            affected_claim_ids=(),
-            analyzer_version="1",
-            config_fingerprint="fp",
-        )
+        common = {
+            "gap_type": GapType.NO_EVIDENCE,
+            "severity": GapSeverity.CRITICAL,
+            "status": DiagnosticStatus.FAIL,
+            "observed_value": 0.0,
+            "threshold_value": 2.0,
+            "affected_source_ids": (),
+            "affected_claim_ids": (),
+            "analyzer_version": "1",
+            "config_fingerprint": "fp",
+        }
         id1 = _make_gap_id(affected_evidence_ids=("ev-1",), **common)
         id2 = _make_gap_id(affected_evidence_ids=("ev-2",), **common)
         assert id1 != id2
 
     def test_affected_ids_sorted_consistently(self) -> None:
-        common = dict(
-            gap_type=GapType.NO_EVIDENCE,
-            severity=GapSeverity.CRITICAL,
-            status=DiagnosticStatus.FAIL,
-            observed_value=0.0,
-            threshold_value=2.0,
-            affected_source_ids=(),
-            affected_claim_ids=(),
-            analyzer_version="1",
-            config_fingerprint="fp",
-        )
+        common = {
+            "gap_type": GapType.NO_EVIDENCE,
+            "severity": GapSeverity.CRITICAL,
+            "status": DiagnosticStatus.FAIL,
+            "observed_value": 0.0,
+            "threshold_value": 2.0,
+            "affected_source_ids": (),
+            "affected_claim_ids": (),
+            "analyzer_version": "1",
+            "config_fingerprint": "fp",
+        }
         id1 = _make_gap_id(affected_evidence_ids=("ev-a", "ev-b"), **common)
         id2 = _make_gap_id(affected_evidence_ids=("ev-b", "ev-a"), **common)
         # Sorted before hashing → same ID regardless of input order

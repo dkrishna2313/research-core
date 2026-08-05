@@ -14,13 +14,10 @@ from research_core.analysis.aggregate import (
 from research_core.analysis.conditions import (
     ConditionStatus,
     cond_duplicate_concentration,
-    cond_evidence_without_claims,
     cond_insufficient_evidence,
     cond_insufficient_sources,
     cond_low_authority,
-    cond_low_claim_coverage,
     cond_low_extraction_confidence,
-    cond_low_provenance_completeness,
     cond_low_relevance,
     cond_no_claims,
     cond_no_evidence,
@@ -31,10 +28,8 @@ from research_core.analysis.conditions import (
     cond_truncation,
 )
 from research_core.analysis.config import GapAnalysisConfig
-from research_core.analysis.contracts import DiagnosticStatus
 from research_core.analysis.quality import score_all_dimensions
 from research_core.contracts.gaps import GapSeverity, GapType
-
 from tests.diagnostics.conftest import make_claim, make_ranked_evidence, make_source
 
 

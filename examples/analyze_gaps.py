@@ -187,7 +187,8 @@ if result.gaps:
 
 qd = result.quality_diagnostics
 print(f"Overall quality status : {qd.overall_status}")
-print(f"Overall quality score  : {qd.overall_score:.3f}" if qd.overall_score is not None else "Overall quality score  : N/A")
+score_str = f"{qd.overall_score:.3f}" if qd.overall_score is not None else "N/A"
+print(f"Overall quality score  : {score_str}")
 print()
 
 print("Dimension breakdown:")

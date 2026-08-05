@@ -9,7 +9,6 @@ import pytest
 from research_core.analysis.analyzer import DeterministicGapAnalyzer
 from research_core.analysis.config import GapAnalysisConfig
 from research_core.contracts.result import ResearchStatus
-
 from tests.diagnostics.conftest import make_claim, make_ranked_evidence, make_source
 
 _PERMISSIVE = GapAnalysisConfig(
