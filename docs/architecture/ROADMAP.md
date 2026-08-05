@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC5
+**Version:** RC6
 
 ---
 
@@ -290,7 +290,7 @@ Extract discrete claims from the ranked evidence pool. Deterministic, provider-n
 - Claim type, modality, polarity, quantitative/temporal/attribution extraction
 - Exact deduplication (same-parent overlap, same evidence, cross-source preserved)
 - Full diagnostics with count reconciliation
-- 17 test modules in `tests/claims/`, pytest marker `claims`
+- 18 test modules in `tests/claims/`, pytest marker `claims`
 - `docs/claims/CLAIM_EXTRACTION.md` and `docs/claims/CLAIM_CONTRACTS.md`
 - `examples/extract_claims.py`
 
@@ -328,22 +328,27 @@ All acceptance criteria met. `DeterministicClaimExtractor` is independently test
 
 ---
 
-## RC6 — Research Gap Analysis and Quality Diagnostics
+## RC6 — Research Gap Analysis and Quality Diagnostics ✓ COMPLETE
 
 ### Objective
 
-Make research gaps and quality diagnostics first-class outputs. The system must never report "no gaps" when evidence is absent, weak, or incomplete.
+Make research gaps and quality diagnostics first-class outputs. The system never reports "no gaps" when evidence is absent, weak, or incomplete.
 
 ### Scope
 
-- `GapAnalyzer` — evaluates all gap conditions from the architecture document
-- `QualityDiagnostics` populated with all component scores
-- Gap conditions tested deterministically
-- Quality dimension scoring (all dimensions from the product brief)
-- Partial result semantics: a result with gaps is valid but explicitly annotated
+- `research_core.analysis` package: contracts, config, aggregate, quality, conditions, analyzer
+- `research_core.diagnostics` thin re-export for clean public API path
+- `GapAnalyzer` protocol + `DeterministicGapAnalyzer` — 17 deterministic conditions
+- `QualityDiagnosticsResult` — five quality dimensions, aggregated per-dimension and overall
+- `GapAnalysisConfig` — all thresholds configurable with stable fingerprint
+- 17 test modules in `tests/diagnostics/`, pytest marker `diagnostics`
+- `docs/diagnostics/` — GAP_ANALYSIS.md, QUALITY_DIAGNOSTICS.md, DIAGNOSTIC_CONTRACTS.md
+- `examples/analyze_gaps.py`
+- Partial result semantics: any gap → PARTIAL; only gap-free with evidence → COMPLETE
 
 ### Non-Scope
 
+- Contradiction detection
 - Synthesis
 - Rendering
 
@@ -353,22 +358,26 @@ RC5 complete.
 
 ### Deliverables
 
-1. `src/research_core/analysis/gap_analyzer.py`
-2. `src/research_core/analysis/quality_scorer.py`
-3. Tests for each gap condition
-4. Tests that verify no gap condition produces a "no gaps" result incorrectly
+1. `src/research_core/analysis/` — full package (contracts, config, aggregate, quality, conditions, analyzer)
+2. `src/research_core/diagnostics/__init__.py` — thin re-export
+3. `tests/diagnostics/` — 17 test modules, 199 tests
+4. `docs/diagnostics/GAP_ANALYSIS.md`
+5. `docs/diagnostics/QUALITY_DIAGNOSTICS.md`
+6. `docs/diagnostics/DIAGNOSTIC_CONTRACTS.md`
+7. `examples/analyze_gaps.py`
 
 ### Acceptance Criteria
 
-- All nine gap conditions produce at least one `ResearchGap`
-- `QualityDiagnostics` exposes all component scores individually
-- An empty evidence pool never produces an empty `research_gaps` list
-- A composite quality score (if present) does not hide component scores
-- Import boundary tests still pass
+- All nine architecture gap conditions plus eight additional conditions evaluated ✓
+- `QualityDiagnosticsResult` exposes all five dimension scores individually ✓
+- An empty evidence pool always produces CRITICAL gaps and PARTIAL status ✓
+- Gap IDs are deterministic and stable across runs with same inputs ✓
+- Import boundary tests still pass ✓
+- `mypy --strict` clean, ruff clean ✓
 
 ### Exit Criteria
 
-All acceptance criteria met. `GapAnalyzer` and `QualityDiagnostics` are independently testable.
+All acceptance criteria met. `DeterministicGapAnalyzer` is independently testable with deterministic fixtures.
 
 ---
 

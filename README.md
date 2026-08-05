@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC5 — Claim Extraction**
+**Status: RC6 — Gap Analysis and Quality Diagnostics**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-RC5 delivers the `research_core.claims` package: deterministic, rule-based claim extraction from ranked evidence. It produces typed `ExtractedClaim` objects with full evidence lineage, claim type/modality/polarity classification, quantitative and temporal sub-expression extraction, attribution detection, and exact deduplication. No LLM calls, no network access, no NLP library dependencies. The research engine is not yet implemented. All domain contracts, the knowledge adapter, the web search adapter, the normalization layer, and the claim extraction layer are stable and importable.
+RC6 delivers the `research_core.analysis` package (also importable as `research_core.diagnostics`): deterministic, provider-neutral gap analysis and quality diagnostics. It evaluates 17 conditions covering evidence sufficiency, source coverage, provider diversity, and five quality dimensions, producing typed `ResearchGap` objects with stable SHA256-based IDs. No LLM calls, no network access, no optional dependencies. The research engine is not yet implemented. All domain contracts, adapters, normalization, claim extraction, and gap analysis layers are stable and importable.
 
 ---
 
@@ -93,9 +93,22 @@ The structured result exposes: `sources`, `evidence`, `claims`, `contradictions`
 
 ## Current Phase
 
-**RC5 — Claim Extraction**
+**RC6 — Gap Analysis and Quality Diagnostics**
 
 This phase delivers:
+
+- `src/research_core/analysis/` — full gap analysis package
+- `src/research_core/diagnostics/__init__.py` — thin re-export for clean public API path
+- `DeterministicGapAnalyzer` — 17 deterministic gap conditions, no LLM, no network
+- `GapAnalysisConfig` — configurable thresholds with stable SHA256 fingerprint
+- Five quality dimensions: relevance, authority, recency, extraction_confidence, provenance_completeness
+- Score non-fabrication: missing values remain `None`, never coerced to `0.0`
+- Conservative recommended status: any gap → PARTIAL; gap-free with evidence → COMPLETE
+- 17 test modules in `tests/diagnostics/`, pytest marker `diagnostics` (199 tests)
+- `docs/diagnostics/GAP_ANALYSIS.md`, `QUALITY_DIAGNOSTICS.md`, `DIAGNOSTIC_CONTRACTS.md`
+- `examples/analyze_gaps.py`
+
+**RC5 deliverables** (still present):
 
 - `src/research_core/claims/` — full claim extraction package
 - `DeterministicClaimExtractor` — rule-based, deterministic, no LLM, no network
@@ -108,7 +121,7 @@ This phase delivers:
 - Attribution extraction (`According to X`, `X said/reported [that]`)
 - Exact deduplication (same-parent collapse, cross-source preserved)
 - Full extraction diagnostics with count reconciliation
-- 17 test modules in `tests/claims/`, pytest marker `claims`
+- 18 test modules in `tests/claims/`, pytest marker `claims`
 - `docs/claims/CLAIM_EXTRACTION.md` and `docs/claims/CLAIM_CONTRACTS.md`
 - `examples/extract_claims.py`
 
@@ -195,6 +208,9 @@ python3 -m mypy src
 | [Web Search Adapter](docs/adapters/WEB_SEARCH_ADAPTER.md) | Web adapter design, extractors, caching |
 | [Claim Extraction](docs/claims/CLAIM_EXTRACTION.md) | Pipeline, algorithms, configuration, guarantees |
 | [Claim Contracts](docs/claims/CLAIM_CONTRACTS.md) | All RC5 data types with field-by-field reference |
+| [Gap Analysis](docs/diagnostics/GAP_ANALYSIS.md) | RC6 gap conditions, severities, configuration |
+| [Quality Diagnostics](docs/diagnostics/QUALITY_DIAGNOSTICS.md) | RC6 dimension scoring, overall status rules |
+| [Diagnostic Contracts](docs/diagnostics/DIAGNOSTIC_CONTRACTS.md) | All RC6 data types with field-by-field reference |
 
 ---
 
@@ -220,8 +236,8 @@ python3 -m mypy src
 | RC2 | Knowledge Adapter ✓ |
 | RC3 | Web Search Adapter ✓ |
 | RC4 | Evidence Normalization and Ranking ✓ |
-| RC5 | Claim Extraction ← current |
-| RC6 | Research Gap Analysis and Quality Diagnostics |
+| RC5 | Claim Extraction ✓ |
+| RC6 | Research Gap Analysis and Quality Diagnostics ← current |
 | RC7 | Synthesis and Renderers |
 | RC8 | Standalone CLI and External Consumer Demo |
 | RC9 | Legacy Component Migration |
