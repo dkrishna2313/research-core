@@ -15,9 +15,68 @@
 | `authority` | 0.15 | `evidence.quality.authority` |
 | `recency` | 0.10 | `evidence.quality.recency` |
 | `extraction_confidence` | 0.05 | `evidence.provenance.extraction_confidence` |
-| `provenance_completeness` | 0.10 | Computed: fraction of non-None provenance fields |
+| `provenance_completeness` | 0.10 | Computed: fraction of applicable provenance fields present |
 
 `provenance_completeness` is always computable (never `None`) since it is derived from counting. The other five components may be `None` if the adapter did not produce that signal.
+
+### Provenance Completeness — Provider-Aware Formula
+
+`provenance_completeness` is a **structural completeness** signal. It is not authority, credibility, trustworthiness, or factual confidence. It measures whether the provenance record contains the fields expected for its provider type.
+
+Each provider type has its own applicable field set so that naturally absent fields are not penalised:
+
+**Common fields** (all providers):
+
+| Field | Notes |
+|-------|-------|
+| `provider` | Provider identity string |
+| `retrieval_query` | Query that retrieved this evidence |
+| `content_hash` | SHA-256 of extracted content |
+
+**Web-specific fields** (`SourceType.WEB`):
+
+| Field | Notes |
+|-------|-------|
+| `url` | Source URL — expected for Web results |
+| `retrieval_rank` | DuckDuckGo result position |
+| `extraction_method` | e.g. `trafilatura`, `pypdf` |
+
+**Knowledge-specific fields** (`SourceType.KNOWLEDGE`):
+
+| Field | Notes |
+|-------|-------|
+| `retrieval_rank` | Rank within knowledge store results |
+| `retrieval_score` | Similarity score from the knowledge store |
+| `extraction_method` | e.g. `text` |
+
+**Fallback fields** (unknown source types):
+
+| Field | Notes |
+|-------|-------|
+| `retrieval_rank` | Conservative minimal set |
+
+**Field presence semantics:**
+
+| Value | Treated as |
+|-------|-----------|
+| `None` | Missing |
+| `""` or `"   "` (empty/whitespace string) | Missing |
+| `0` or `0.0` (numeric zero) | **Present** |
+| `False` | Present |
+| Any non-empty string | Present |
+| Any non-None non-string | Present |
+
+Numeric zero is explicitly present — a `retrieval_score=0.0` or `retrieval_rank=0` is a real value, not an absence.
+
+**Formula:**
+
+```
+applicable = provider_specific_field_set
+present = count(field for field in applicable if _field_is_present(provenance[field]))
+completeness = present / len(applicable)
+```
+
+Score range: `[0.0, 1.0]`. A structurally complete Web item without `retrieval_score` (which DDGS does not provide) scores `1.0`. A structurally complete Knowledge item without a URL scores `1.0`. Both provider types use 6 applicable fields.
 
 ## Missing Value Policy ("proportional")
 
@@ -29,7 +88,7 @@ total_weight = sum(base_weight for _, _, base_weight in available)
 score = sum(value * base_weight / total_weight for _, value, base_weight in available)
 ```
 
-Real `0.0` values **are** included — only `None` is treated as missing.
+Real `0.0` values **are** included — only `None` is treated as missing at the component level. Note that provenance-completeness field presence uses different semantics (see below): empty and whitespace-only strings also count as missing at the field level, while numeric zero remains present.
 
 If all components are `None` (impossible in practice since `provenance_completeness` is always computed): `score = 0.0`.
 
