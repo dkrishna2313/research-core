@@ -24,7 +24,7 @@ class GapAnalysisConfig:
     minimum_extraction_confidence_score: float = 0.3
     minimum_provenance_completeness_score: float = 0.5
     minimum_quality_coverage_ratio: float = 0.3
-    include_passed_conditions: bool = False
+    include_passed_conditions: bool = False  # reserved; no effect in RC6
     analyzer_version: str = "1"
 
     @property

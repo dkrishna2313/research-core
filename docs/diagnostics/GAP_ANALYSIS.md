@@ -81,6 +81,8 @@ The analyzer returns a `recommended_status` (`ResearchStatus.COMPLETE` or `PARTI
 
 Gap IDs are deterministic SHA256-based identifiers of the form `gap-<20hex>`. They encode: gap type, severity, status, observed value, threshold, affected IDs, analyzer version, and config fingerprint. The same gap in two separate runs of the same configuration produces the same ID.
 
+**Edge case:** The gap ID formula does not include the condition name. Two distinct conditions that produce identical structural parameters (same gap type, severity, observed value, threshold, and affected IDs) will generate the same gap ID and be deduplicated to a single gap. This can occur with non-default zero-threshold configurations (`minimum_evidence_count=0`, `minimum_source_count=0`), where both `no_sources` and `no_evidence` emit a CRITICAL gap with threshold `0.0`. The `conditions_failed` count in diagnostics may therefore exceed `gaps_emitted` when this occurs.
+
 ## Configuration
 
 See [GapAnalysisConfig](DIAGNOSTIC_CONTRACTS.md#gapanalysisconfig) for all threshold parameters.

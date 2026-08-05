@@ -52,8 +52,9 @@ class GapAnalysisConfig:
 
     Behavior
     --------
-    include_passed_conditions: whether to include PASS conditions in
-        GapAnalysisDiagnostics (does not affect gap output).
+    include_passed_conditions: reserved for a future version. Currently has
+        no effect — GapAnalysisDiagnostics always exposes the conditions_passed
+        count regardless of this flag. Do not rely on it to suppress output.
     analyzer_version: version tag included in gap IDs and diagnostics.
     """
 
