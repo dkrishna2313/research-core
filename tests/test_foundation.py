@@ -53,13 +53,11 @@ PROHIBITED_RUNTIME_IMPORTS = [
 ]
 
 # Modules that must NOT exist in the source package (premature implementation).
-# research_core.contracts and research_core.protocols are intentional RC1 deliverables
-# and are no longer in this list.
+# research_core.contracts and research_core.protocols are intentional RC1 deliverables.
+# research_core.engine, synthesis, and renderers are intentional RC7 deliverables.
+# Only modules from future phases remain in this list.
 PREMATURE_IMPLEMENTATION_MODULES = [
-    "research_core.engine",
-    "research_core.synthesis",
     "research_core.providers",
-    "research_core.renderers",
     "research_core.cli",
 ]
 
