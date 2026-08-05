@@ -69,6 +69,7 @@ class ConditionResult:
 
 
 def _make_gap_id(
+    condition_name: str,
     gap_type: GapType,
     severity: GapSeverity,
     status: DiagnosticStatus,
@@ -80,8 +81,26 @@ def _make_gap_id(
     analyzer_version: str,
     config_fingerprint: str,
 ) -> str:
-    """Return a deterministic SHA256-based gap ID."""
+    """Return a deterministic SHA256-based gap ID.
+
+    Formula (sorted canonical JSON → SHA-256 → first 20 hex chars):
+      condition      — stable internal condition name (e.g. "no_sources")
+      type           — GapType string value
+      severity       — GapSeverity string value
+      status         — DiagnosticStatus string value
+      observed       — str(observed_value)
+      threshold      — str(threshold_value)
+      sources        — sorted list of affected source IDs
+      evidence       — sorted list of affected evidence IDs
+      claims         — sorted list of affected claim IDs
+      version        — analyzer version string
+      config         — configuration fingerprint
+
+    Including condition_name prevents collisions when two distinct conditions
+    emit a gap with otherwise identical structural parameters.
+    """
     payload = {
+        "condition": condition_name,
         "type": str(gap_type),
         "severity": str(severity),
         "status": str(status),
@@ -99,6 +118,7 @@ def _make_gap_id(
 
 def _make_gap(
     *,
+    condition_name: str,
     gap_type: GapType,
     severity: GapSeverity,
     description: str,
@@ -111,6 +131,7 @@ def _make_gap(
     cfg: GapAnalysisConfig,
 ) -> ResearchGap:
     gap_id = _make_gap_id(
+        condition_name=condition_name,
         gap_type=gap_type,
         severity=severity,
         status=DiagnosticStatus.FAIL,
@@ -131,6 +152,7 @@ def _make_gap(
         severity=severity,
         recommended_action=recommended_action,
         status=GapStatus.OPEN,
+        condition=condition_name,
         metadata=EMPTY_METADATA,
     )
 
@@ -146,6 +168,7 @@ def cond_no_sources(
 ) -> ConditionResult:
     if not sources:
         gap = _make_gap(
+            condition_name="no_sources",
             gap_type=GapType.NO_EVIDENCE,
             severity=GapSeverity.CRITICAL,
             description="No source documents were loaded. Analysis cannot proceed.",
@@ -164,6 +187,7 @@ def cond_no_evidence(
 ) -> ConditionResult:
     if not ranked_evidence:
         gap = _make_gap(
+            condition_name="no_evidence",
             gap_type=GapType.NO_EVIDENCE,
             severity=GapSeverity.CRITICAL,
             description="No usable evidence was retrieved. Quality cannot be assessed.",
@@ -184,6 +208,7 @@ def cond_insufficient_evidence(
     if count >= cfg.minimum_evidence_count:
         return ConditionResult("insufficient_evidence", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="insufficient_evidence",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.HIGH,
         description=(
@@ -214,6 +239,7 @@ def cond_insufficient_sources(
     if count >= cfg.minimum_source_count:
         return ConditionResult("insufficient_sources", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="insufficient_sources",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.HIGH,
         description=(
@@ -242,6 +268,7 @@ def cond_no_claims(
         sorted(r.normalized_evidence.evidence.evidence_id for r in ranked_evidence)
     )
     gap = _make_gap(
+        condition_name="no_claims",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.MEDIUM,
         description="Evidence was retrieved but no claims were extracted from it.",
@@ -263,6 +290,7 @@ def cond_evidence_without_claims(
     if coverage.evidence_without_claims == 0:
         return ConditionResult("evidence_without_claims", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="evidence_without_claims",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.LOW,
         description=(
@@ -286,6 +314,7 @@ def cond_low_claim_coverage(
     if ratio >= cfg.minimum_claim_coverage_ratio:
         return ConditionResult("low_claim_coverage", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="low_claim_coverage",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -314,6 +343,7 @@ def cond_stale_evidence(
         return ConditionResult("stale_evidence", ConditionStatus.PASS, None)
     mean = recency_dim.mean
     gap = _make_gap(
+        condition_name="stale_evidence",
         gap_type=GapType.STALE_EVIDENCE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -341,6 +371,7 @@ def cond_low_extraction_confidence(
         return ConditionResult("low_extraction_confidence", ConditionStatus.PASS, None)
     mean = dim.mean
     gap = _make_gap(
+        condition_name="low_extraction_confidence",
         gap_type=GapType.LOW_EXTRACTION_CONFIDENCE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -366,6 +397,7 @@ def cond_source_concentration(
     if share <= cfg.maximum_single_source_share:
         return ConditionResult("source_concentration", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="source_concentration",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.HIGH,
         description=(
@@ -390,6 +422,7 @@ def cond_provider_concentration(
     if share <= cfg.maximum_single_provider_share:
         return ConditionResult("provider_concentration", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="provider_concentration",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -415,6 +448,7 @@ def cond_low_relevance(
         return ConditionResult("low_relevance", ConditionStatus.PASS, None)
     mean = dim.mean
     gap = _make_gap(
+        condition_name="low_relevance",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -441,6 +475,7 @@ def cond_low_authority(
         return ConditionResult("low_authority", ConditionStatus.PASS, None)
     mean = dim.mean
     gap = _make_gap(
+        condition_name="low_authority",
         gap_type=GapType.WEAK_AUTHORITY,
         severity=GapSeverity.HIGH,
         description=(
@@ -470,6 +505,7 @@ def cond_low_provenance_completeness(
         return ConditionResult("low_provenance_completeness", ConditionStatus.PASS, None)
     mean = dim.mean
     gap = _make_gap(
+        condition_name="low_provenance_completeness",
         gap_type=GapType.MISSING_DIMENSION,
         severity=GapSeverity.LOW,
         description=(
@@ -501,6 +537,7 @@ def cond_missing_quality_dimension(
         coverage_ratio = dim.measured_count / total if total > 0 else 0.0
         if coverage_ratio < cfg.minimum_quality_coverage_ratio and dim.missing_count > 0:
             gap = _make_gap(
+                condition_name="missing_quality_dimension",
                 gap_type=GapType.MISSING_DIMENSION,
                 severity=GapSeverity.LOW,
                 description=(
@@ -536,6 +573,7 @@ def cond_duplicate_concentration(
     if share <= cfg.maximum_duplicate_share:
         return ConditionResult("duplicate_concentration", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="duplicate_concentration",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.MEDIUM,
         description=(
@@ -564,6 +602,7 @@ def cond_truncation(
     if share <= cfg.maximum_truncated_share:
         return ConditionResult("truncation", ConditionStatus.PASS, None)
     gap = _make_gap(
+        condition_name="truncation",
         gap_type=GapType.INSUFFICIENT_COVERAGE,
         severity=GapSeverity.LOW,
         description=(

@@ -66,6 +66,9 @@ class GapStatus(StrEnum):
 class ResearchGap:
     """An identified gap in evidence coverage.
 
+    condition: stable internal condition identifier that produced this gap
+    (e.g. "no_sources", "no_evidence"). Empty string when not set by the emitter.
+
     recommended_action: a research action (e.g. "retrieve additional sources",
     "verify with primary data") — not a business-strategy recommendation.
     """
@@ -78,6 +81,7 @@ class ResearchGap:
     severity: GapSeverity = GapSeverity.MEDIUM
     recommended_action: str = ""
     status: GapStatus = GapStatus.OPEN
+    condition: str = ""
     metadata: Metadata = field(default_factory=lambda: EMPTY_METADATA)
 
     def __post_init__(self) -> None:

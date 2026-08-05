@@ -79,9 +79,27 @@ The analyzer returns a `recommended_status` (`ResearchStatus.COMPLETE` or `PARTI
 
 ## Gap IDs
 
-Gap IDs are deterministic SHA256-based identifiers of the form `gap-<20hex>`. They encode: gap type, severity, status, observed value, threshold, affected IDs, analyzer version, and config fingerprint. The same gap in two separate runs of the same configuration produces the same ID.
+Gap IDs are deterministic SHA256-based identifiers of the form `gap-<20hex>`. The ID is computed as:
 
-**Edge case:** The gap ID formula does not include the condition name. Two distinct conditions that produce identical structural parameters (same gap type, severity, observed value, threshold, and affected IDs) will generate the same gap ID and be deduplicated to a single gap. This can occur with non-default zero-threshold configurations (`minimum_evidence_count=0`, `minimum_source_count=0`), where both `no_sources` and `no_evidence` emit a CRITICAL gap with threshold `0.0`. The `conditions_failed` count in diagnostics may therefore exceed `gaps_emitted` when this occurs.
+```
+SHA-256(canonical_json({
+  "claims":    sorted list of affected claim IDs,
+  "condition": stable internal condition name (e.g. "no_sources"),
+  "config":    configuration fingerprint,
+  "evidence":  sorted list of affected evidence IDs,
+  "observed":  str(observed_value),
+  "severity":  severity string,
+  "sources":   sorted list of affected source IDs,
+  "status":    status string,
+  "threshold": str(threshold_value),
+  "type":      gap type string,
+  "version":   analyzer version string,
+}))[:20]
+```
+
+The payload uses `json.dumps(..., sort_keys=True, separators=(",", ":"))`. The same condition and inputs in two separate runs of the same configuration produce the same ID.
+
+The `condition` field (stable internal condition name) ensures two distinct conditions that share the same gap type, severity, and affected IDs still produce distinct gap IDs.
 
 ## Configuration
 

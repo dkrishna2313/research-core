@@ -17,6 +17,7 @@ from research_core.contracts.gaps import GapSeverity, GapType
 class TestMakeGapId:
     def test_id_starts_with_gap_prefix(self) -> None:
         gap_id = _make_gap_id(
+            condition_name="no_sources",
             gap_type=GapType.NO_EVIDENCE,
             severity=GapSeverity.CRITICAL,
             status=DiagnosticStatus.FAIL,
@@ -32,6 +33,7 @@ class TestMakeGapId:
 
     def test_id_length(self) -> None:
         gap_id = _make_gap_id(
+            condition_name="no_sources",
             gap_type=GapType.NO_EVIDENCE,
             severity=GapSeverity.CRITICAL,
             status=DiagnosticStatus.FAIL,
@@ -48,6 +50,7 @@ class TestMakeGapId:
 
     def test_same_inputs_same_id(self) -> None:
         kwargs = {
+            "condition_name": "no_sources",
             "gap_type": GapType.NO_EVIDENCE,
             "severity": GapSeverity.CRITICAL,
             "status": DiagnosticStatus.FAIL,
@@ -65,6 +68,7 @@ class TestMakeGapId:
 
     def test_different_types_different_ids(self) -> None:
         common = {
+            "condition_name": "test_cond",
             "severity": GapSeverity.HIGH,
             "status": DiagnosticStatus.FAIL,
             "observed_value": 0.5,
@@ -81,6 +85,7 @@ class TestMakeGapId:
 
     def test_different_evidence_ids_different_gap_ids(self) -> None:
         common = {
+            "condition_name": "no_sources",
             "gap_type": GapType.NO_EVIDENCE,
             "severity": GapSeverity.CRITICAL,
             "status": DiagnosticStatus.FAIL,
@@ -97,6 +102,7 @@ class TestMakeGapId:
 
     def test_affected_ids_sorted_consistently(self) -> None:
         common = {
+            "condition_name": "no_sources",
             "gap_type": GapType.NO_EVIDENCE,
             "severity": GapSeverity.CRITICAL,
             "status": DiagnosticStatus.FAIL,
