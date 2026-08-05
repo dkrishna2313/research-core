@@ -59,7 +59,6 @@ PREMATURE_IMPLEMENTATION_MODULES = [
     "research_core.engine",
     "research_core.synthesis",
     "research_core.providers",
-    "research_core.analysis",
     "research_core.renderers",
     "research_core.cli",
 ]
