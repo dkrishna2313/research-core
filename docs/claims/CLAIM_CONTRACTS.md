@@ -80,6 +80,7 @@ Why a candidate was not emitted as a claim.
 |---|---|
 | `empty` | Text is empty after stripping |
 | `too_short` | Below `minimum_claim_characters` |
+| `too_long` | Above `maximum_claim_characters` |
 | `heading` | Detected as a section heading |
 | `question` | Ends with `?` and `preserve_questions=False` |
 | `command` | Starts with imperative verb and `preserve_commands=False` |
@@ -224,8 +225,9 @@ Records a claim that was collapsed during deduplication.
 |---|---|---|
 | `claim_id` | `str` | ID of the collapsed (non-canonical) claim |
 | `canonical_claim_id` | `str` | ID of the retained canonical claim |
+| `method` | `str` | Deduplication strategy applied (`exact_overlap`, `exact_same_evidence`, `exact_same_parent`) |
+| `reason` | `str` | Human-readable description of why the claim was collapsed |
 | `similarity` | `float` | Always `1.0` for exact deduplication |
-| `strategy` | `str` | Description of the deduplication rule applied |
 
 ---
 
@@ -235,10 +237,13 @@ Records a candidate that did not pass the assertiveness filter.
 
 | Field | Type | Description |
 |---|---|---|
-| `candidate_text` | `str` | The text that was rejected |
-| `reason` | `RejectionReason` | Why it was rejected |
-| `source_id` | `str` | Originating source |
 | `evidence_id` | `str` | Originating evidence item |
+| `candidate_text` | `str` | The text that was rejected (truncated to `maximum_claim_characters` for TOO_LONG) |
+| `start_char` | `int` | Start offset of the candidate within the evidence content |
+| `end_char` | `int` | End offset of the candidate within the evidence content |
+| `reason` | `RejectionReason` | Why it was rejected |
+| `sentence_index` | `int` | 0-based sentence index within the evidence item |
+| `clause_index` | `int` | 0-based clause index within the sentence |
 
 ---
 

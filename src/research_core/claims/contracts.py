@@ -109,6 +109,7 @@ class RejectionReason(StrEnum):
 
     EMPTY = "empty"
     TOO_SHORT = "too_short"
+    TOO_LONG = "too_long"
     HEADING = "heading"
     QUESTION = "question"
     COMMAND = "command"

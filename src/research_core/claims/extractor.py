@@ -200,10 +200,10 @@ class DeterministicClaimExtractor:
                     rejections.append(
                         ClaimRejection(
                             evidence_id=evidence.evidence_id,
-                            candidate_text=clause_text[: cfg.minimum_claim_characters],
+                            candidate_text=clause_text[: cfg.maximum_claim_characters],
                             start_char=clause_start,
                             end_char=clause_end,
-                            reason=RejectionReason.TOO_SHORT,
+                            reason=RejectionReason.TOO_LONG,
                             sentence_index=sent_idx,
                             clause_index=clause_idx,
                         )

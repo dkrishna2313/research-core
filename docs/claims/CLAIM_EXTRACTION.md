@@ -87,7 +87,12 @@ The function returns `list[tuple[str, int, int]]` where each entry is `(sentence
 
 ## Assertiveness Filter
 
-`_candidate.is_assertive(text, min_chars)` rejects text that:
+Clauses are pre-filtered by character length before assertiveness checking:
+
+- Clauses below `minimum_claim_characters` → rejected with `TOO_SHORT`
+- Clauses above `maximum_claim_characters` → rejected with `TOO_LONG`
+
+`_candidate.is_assertive(text, min_chars)` then rejects text that:
 
 - Is empty or below `minimum_claim_characters`
 - Is a question (ends with `?`)
@@ -184,8 +189,12 @@ Relative expressions are never resolved to absolute dates.
 `_deduplicate.deduplicate_claims(claims)` uses the key:
 
 ```
-"{source_id}\x00{parent_evidence_id_or_empty}\x00{normalized_text}"
+"{source_id}\x00{scope}\x00{normalized_text}"
 ```
+
+where `scope` is:
+- `"parent:{parent_evidence_id}"` when the claim comes from a segment (has a parent evidence ID)
+- `"ev:{evidence_id}"` when the claim comes from unsegmented evidence
 
 - **Same-parent overlap**: two claims from different segments of the same parent evidence with the same text → collapse to canonical.
 - **Same evidence item**: same evidence produces duplicate claims (e.g., via both sentence and clause paths) → collapse.
@@ -202,19 +211,21 @@ The canonical claim is the one with the lowest sort key: `(segment_index, eviden
 Claim IDs are deterministic SHA256-based identifiers:
 
 ```
-"clm-" + sha256(
-    "\x00".join([
-        source_id,
-        evidence_id,
-        parent_evidence_id or "",
-        str(start_char),
-        str(end_char),
-        sha256(claim_text.encode())[:16],
-        extractor_version,
-        normalization_version,
-    ])
-)[:20]
+content_hash = sha256(normalized_text.encode()).hexdigest()   # full 64-char hex digest
+key = "\x00".join([
+    source_id,
+    evidence_id,
+    parent_evidence_id or "",
+    str(start_char),
+    str(end_char),
+    content_hash,
+    extractor_version,
+    normalization_version,
+])
+claim_id = "clm-" + sha256(key.encode()).hexdigest()[:20]
 ```
+
+`normalized_text` (not `claim_text`) is hashed — conservative whitespace and Unicode NFC normalization is applied first. Any change to `source_id`, `evidence_id`, `parent_evidence_id`, character offsets, normalized content, or version strings changes the ID. Changes to metadata, rank, or score do not.
 
 The same claim re-extracted from the same evidence produces the same ID regardless of extraction order.
 
