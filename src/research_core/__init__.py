@@ -1,8 +1,7 @@
 """
 research-core — domain-neutral research library.
 
-This package is currently in RC1 (Core Contracts and Package Boundary).
-The research engine is not yet implemented.
+RC7: synthesis engine and Markdown rendering.
 
 Importing this package does not trigger filesystem access, network access,
 environment-variable loading, provider initialization, or legacy imports.
@@ -11,6 +10,9 @@ Public surface:
 - research_core.contracts  — typed domain contracts (data layer)
 - research_core.protocols  — provider protocol boundaries (interface layer)
 - research_core.exceptions — typed exception hierarchy
+- research_core.engine     — ResearchEngine orchestration
+- research_core.synthesis  — DeterministicSynthesizer
+- research_core.renderers  — MarkdownRenderer
 """
 
 from __future__ import annotations
@@ -58,6 +60,7 @@ from research_core.contracts import (
     TraceStage,
     serialize,
 )
+from research_core.engine import ResearchEngine
 from research_core.exceptions import (
     ContractValidationError,
     IncompleteResearchError,
@@ -97,8 +100,10 @@ from research_core.protocols import (
     WebSearchRequest,
     WebSearchResult,
 )
+from research_core.renderers import MarkdownRenderer
+from research_core.synthesis import DeterministicSynthesizer
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 __all__ = [
     "__version__",
@@ -171,6 +176,10 @@ __all__ = [
     "WebSearchProvider",
     "WebSearchRequest",
     "WebSearchResult",
+    # engine / synthesis / renderers
+    "ResearchEngine",
+    "DeterministicSynthesizer",
+    "MarkdownRenderer",
     # normalization
     "AdapterCapability",
     "CapabilityReport",

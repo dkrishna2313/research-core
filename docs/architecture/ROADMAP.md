@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC6
+**Version:** RC7
 
 ---
 
@@ -381,7 +381,7 @@ All acceptance criteria met. `DeterministicGapAnalyzer` is independently testabl
 
 ---
 
-## RC7 — Synthesis and Renderers
+## RC7 — Synthesis and Renderers ✓ COMPLETE
 
 ### Objective
 
@@ -389,12 +389,14 @@ Produce a complete, structured `ResearchResult`. Introduce Markdown as the first
 
 ### Scope
 
-- `Synthesizer` provider protocol (already defined in RC1) — first concrete implementation (deterministic baseline)
-- `ResearchEngine` — full pipeline orchestration from request to result
-- `MarkdownRenderer` — derives Markdown from `ResearchResult`
-- `ResearchResult` with all fields populated from a real pipeline run
-- Integration test with a fixed evidence fixture
-- Renderer snapshot tests
+- `DeterministicSynthesizer` in `src/research_core/synthesis/` — deterministic baseline, no LLM
+- `ResearchEngine` in `src/research_core/engine.py` — full pipeline orchestration
+- `MarkdownRenderer` in `src/research_core/renderers/markdown.py` — pure Markdown output
+- Integration tests, partial-result tests, import boundary tests
+- Renderer snapshot tests in `tests/renderers/snapshots/`
+- Docs: `docs/synthesis/`, `docs/engine/`, `docs/renderers/`
+- Examples: `examples/run_research.py`, `examples/render_research_markdown.py`
+- Version bumped to 0.7.0
 
 ### Non-Scope
 
@@ -408,20 +410,27 @@ RC6 complete.
 
 ### Deliverables
 
-1. `src/research_core/synthesis/synthesizer.py`
-2. `src/research_core/engine.py`
-3. `src/research_core/renderers/markdown.py`
-4. Integration test
-5. Renderer snapshot test
+1. `src/research_core/synthesis/` — `DeterministicSynthesizer`
+2. `src/research_core/engine.py` — `ResearchEngine`
+3. `src/research_core/renderers/markdown.py` — `MarkdownRenderer`
+4. `tests/synthesis/` — synthesizer tests and import boundary tests
+5. `tests/engine/` — engine integration, partial results, trace, and import boundary tests
+6. `tests/renderers/` — renderer tests, purity tests, snapshot tests
+7. `tests/renderers/snapshots/` — committed snapshot files
+8. `docs/synthesis/SYNTHESIS.md`, `docs/synthesis/SYNTHESIS_CONTRACTS.md`
+9. `docs/engine/RESEARCH_ENGINE.md`
+10. `docs/renderers/MARKDOWN_RENDERER.md`
+11. `examples/run_research.py`, `examples/render_research_markdown.py`
 
 ### Acceptance Criteria
 
-- `ResearchEngine.run()` produces a `ResearchResult` from a fixture request
-- `ResearchResult` contains non-empty `claims`, `evidence`, `sources`, `quality_diagnostics`, `trace`
-- `MarkdownRenderer` produces valid Markdown from any `ResearchResult`
-- The Markdown renderer does not modify or produce the `ResearchResult`
-- Synthesis failure produces a partial result, not an exception (unless the request was invalid)
-- Import boundary tests still pass
+- `ResearchEngine.run()` produces a `ResearchResult` from a fixture request ✓
+- `ResearchResult` contains non-empty evidence, claims, sources, quality, trace ✓
+- `MarkdownRenderer` produces valid Markdown from any `ResearchResult` ✓
+- The Markdown renderer never mutates the input result ✓
+- Synthesis failure produces a partial result, not an exception ✓
+- Empty evidence raises `ProviderExecutionError` — no PARTIAL result for empty evidence ✓
+- Import boundary tests pass for engine, synthesis, and renderers ✓
 
 ### Exit Criteria
 

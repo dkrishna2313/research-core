@@ -17,7 +17,7 @@ import types
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from research_core.contracts.claims import Claim
 from research_core.contracts.common import (
@@ -36,6 +36,16 @@ from research_core.contracts.request import ResearchRequest
 from research_core.contracts.sources import Source
 from research_core.contracts.trace import ResearchTrace
 from research_core.exceptions import ContractValidationError
+from research_core.synthesis.contracts import (
+    SynthesisCitation,
+    SynthesisDiagnostics,
+    SynthesisSection,
+    SynthesisStatus,
+)
+
+if TYPE_CHECKING:
+    from research_core.analysis.contracts import GapAnalysisResult
+    from research_core.normalization.contracts import RankedEvidence
 
 
 class ResearchStatus(StrEnum):
@@ -61,11 +71,15 @@ class ResearchStatus(StrEnum):
 class SynthesisResult:
     """Output from a Synthesizer provider.
 
-    narrative: the synthesized prose answer to the research question.
-    key_findings: ordered list of discrete findings surfaced by synthesis.
-    synthesis_model: optional identifier for the model or method used.
+    narrative: the synthesized prose answer (required, non-empty).
+    key_findings: ordered list of discrete claim statements.
+    synthesis_model: optional model/method identifier.
     synthesized_at: when synthesis completed; must be timezone-aware.
     confidence: overall synthesis confidence in [0.0, 1.0]; None = not assessed.
+    sections: structured sections (RC7+ structured synthesis; empty for legacy).
+    citations: traceable citations linking sections to claims and evidence.
+    synthesis_diagnostics: execution diagnostics for structured synthesis.
+    synthesis_status: outcome of the structured synthesis run.
     metadata: caller-supplied passthrough; not interpreted by the framework.
     """
 
@@ -74,6 +88,11 @@ class SynthesisResult:
     synthesis_model: str | None = None
     synthesized_at: datetime | None = None
     confidence: float | None = None
+    # RC7 structured synthesis fields (default-empty for backward compatibility)
+    sections: tuple[SynthesisSection, ...] = field(default_factory=tuple)
+    citations: tuple[SynthesisCitation, ...] = field(default_factory=tuple)
+    synthesis_diagnostics: SynthesisDiagnostics | None = None
+    synthesis_status: SynthesisStatus = SynthesisStatus.COMPLETE
     metadata: Metadata = field(default_factory=lambda: EMPTY_METADATA)
 
     def __post_init__(self) -> None:
@@ -119,6 +138,9 @@ class ResearchResult:
     quality: QualityDiagnostics | None = None
     trace: ResearchTrace | None = None
     completed_at: datetime | None = None
+    # RC7 structured pipeline fields (optional; populated when RC4-RC6 components are used)
+    ranked_evidence: tuple[RankedEvidence, ...] = field(default_factory=tuple)
+    gap_analysis: GapAnalysisResult | None = None
     metadata: Metadata = field(default_factory=lambda: EMPTY_METADATA)
 
     def __post_init__(self) -> None:  # noqa: C901
