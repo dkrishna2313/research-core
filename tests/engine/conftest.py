@@ -18,7 +18,9 @@ from research_core.contracts.contradictions import Contradiction
 from research_core.contracts.evidence import EvidenceItem
 from research_core.contracts.gaps import OpenQuestion, ResearchGap
 from research_core.contracts.request import ResearchRequest
-from research_core.contracts.result import SynthesisResult
+from research_core.contracts.result import (
+    SynthesisResult,  # noqa: F401 (used by FailingSynthesizer type annotation)
+)
 from research_core.contracts.sources import EvidenceQuality, Provenance, Source
 from research_core.protocols.knowledge import (
     KnowledgeRetrievalRequest,
@@ -196,15 +198,7 @@ class FailingGapAnalyzer:
 class FailingSynthesizer:
     """Raises on every call — used to test synthesis-failure partial-result behavior."""
 
-    def synthesize(
-        self,
-        request: Any,
-        evidence: tuple[EvidenceItem, ...],
-        claims: tuple[Claim, ...],
-        contradictions: tuple[Contradiction, ...],
-        gaps: tuple[ResearchGap, ...],
-        open_questions: tuple[OpenQuestion, ...],
-    ) -> SynthesisResult:
+    def synthesize(self, inputs: Any, *, config: Any = None) -> SynthesisResult:
         raise RuntimeError("Synthesis intentionally failed.")
 
 

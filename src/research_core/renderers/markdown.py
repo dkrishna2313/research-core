@@ -97,7 +97,16 @@ class MarkdownRenderer:
         # ------------------------------------------------------------------ #
         section("Executive Summary")
         if result.synthesis is not None:
-            line(result.synthesis.narrative)
+            syn = result.synthesis
+            if syn.sections:
+                # Structured synthesis: render summary section body
+                summary_secs = [s for s in syn.sections if s.title == "Summary"]
+                if summary_secs:
+                    line(summary_secs[0].body)
+                else:
+                    line(syn.narrative)
+            else:
+                line(syn.narrative)
         else:
             line("*Not available — synthesis was not performed or did not complete.*")
         blank()
@@ -159,7 +168,28 @@ class MarkdownRenderer:
         # Quality Diagnostics
         # ------------------------------------------------------------------ #
         section("Quality Diagnostics")
-        if result.quality is not None:
+        if result.gap_analysis is not None:
+            # RC6 rich quality diagnostics
+            qd = result.gap_analysis.quality_diagnostics
+            line(f"**Overall Status:** {qd.overall_status.value}")
+            if qd.overall_score is not None:
+                line(f"**Overall Score:** {_score_str(qd.overall_score)}")
+            blank()
+            cov = qd.coverage
+            line(f"**Coverage:** {cov.source_count} source(s), "
+                 f"{cov.evidence_count} evidence item(s), "
+                 f"{cov.claim_count} claim(s).")
+            if cov.evidence_utilization_ratio is not None:
+                line(f"**Evidence Utilization:** {cov.evidence_utilization_ratio:.1%}")
+            blank()
+            if qd.dimensions:
+                line("| Dimension | Status | Score |")
+                line("|-----------|--------|-------|")
+                for dim in qd.dimensions:
+                    score_s = _score_str(dim.mean)
+                    line(f"| {dim.dimension} | {dim.status.value} | {score_s} |")
+                blank()
+        elif result.quality is not None:
             qual = result.quality
             if qual.composite is not None:
                 line(f"**Composite Score:** {_score_str(qual.composite)}")
@@ -167,8 +197,8 @@ class MarkdownRenderer:
 
             line("| Dimension | Score |")
             line("|-----------|-------|")
-            for dim_name, dim in qual.dimensions().items():
-                line(f"| {dim_name} | {_score_str(dim.score)} |")
+            for dim_name, leg_dim in qual.dimensions().items():
+                line(f"| {dim_name} | {_score_str(leg_dim.score)} |")
             blank()
         else:
             line("*Quality diagnostics unavailable.*")
@@ -220,14 +250,34 @@ class MarkdownRenderer:
             if syn.confidence is not None:
                 line(f"**Confidence:** {syn.confidence:.3f}")
                 blank()
-            line(syn.narrative)
-            blank()
-            if syn.key_findings:
-                line("**Key Findings:**")
+            if syn.sections:
+                # Structured synthesis: render non-Summary sections
+                non_summary = [s for s in syn.sections if s.title != "Summary"]
+                for sec in sorted(non_summary, key=lambda s: s.order):
+                    section(sec.title, level=3)
+                    if sec.body:
+                        line(sec.body)
+                    blank()
+                if syn.citations:
+                    section("Citations", level=3)
+                    for cit in syn.citations:
+                        label = cit.label or cit.citation_id
+                        line(
+                            f"{label} claim:`{cit.claim_id}` "
+                            f"evidence:`{cit.evidence_id}` "
+                            f"source:`{cit.source_id}`"
+                        )
+                    blank()
+            else:
+                # Legacy synthesis: render narrative + key_findings
+                line(syn.narrative)
                 blank()
-                for finding in syn.key_findings:
-                    line(f"- {finding}")
-                blank()
+                if syn.key_findings:
+                    line("**Key Findings:**")
+                    blank()
+                    for finding in syn.key_findings:
+                        line(f"- {finding}")
+                    blank()
         else:
             line("*Synthesis not available.*")
             blank()

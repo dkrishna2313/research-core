@@ -55,9 +55,10 @@ class TestTraceEvent:
 class TestTraceStage:
     def test_all_expected_stages_exist(self) -> None:
         expected = {
-            "INIT", "PROFILE_RESOLUTION", "RETRIEVAL", "EXTRACTION",
-            "CLAIM_ANALYSIS", "CONTRADICTION_DETECTION", "GAP_ANALYSIS",
-            "SYNTHESIS", "RENDERING", "FINALIZATION", "OTHER",
+            "INIT", "PROFILE_RESOLUTION", "RETRIEVAL",
+            "NORMALIZATION", "RANKING",
+            "EXTRACTION", "CLAIM_ANALYSIS", "CONTRADICTION_DETECTION",
+            "GAP_ANALYSIS", "SYNTHESIS", "RENDERING", "FINALIZATION", "OTHER",
         }
         assert {m.name for m in TraceStage} == expected
 

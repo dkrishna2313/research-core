@@ -35,6 +35,8 @@ class TraceStage(StrEnum):
     INIT = "init"
     PROFILE_RESOLUTION = "profile_resolution"
     RETRIEVAL = "retrieval"
+    NORMALIZATION = "normalization"
+    RANKING = "ranking"
     EXTRACTION = "extraction"
     CLAIM_ANALYSIS = "claim_analysis"
     CONTRADICTION_DETECTION = "contradiction_detection"
