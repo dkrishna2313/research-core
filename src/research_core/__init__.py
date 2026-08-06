@@ -1,7 +1,7 @@
 """
 research-core — domain-neutral research library.
 
-RC7: synthesis engine and Markdown rendering.
+RC8: standalone CLI and external consumer demo.
 
 Importing this package does not trigger filesystem access, network access,
 environment-variable loading, provider initialization, or legacy imports.
@@ -103,7 +103,7 @@ from research_core.protocols import (
 from research_core.renderers import MarkdownRenderer
 from research_core.synthesis import DeterministicSynthesizer
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 __all__ = [
     "__version__",

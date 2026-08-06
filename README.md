@@ -1,10 +1,27 @@
 # research-core
 
-**Status: RC6 — Gap Analysis and Quality Diagnostics**
+**Status: RC8 — Standalone CLI and External Consumer Demo**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-RC6 delivers the `research_core.analysis` package (also importable as `research_core.diagnostics`): deterministic, provider-neutral gap analysis and quality diagnostics. It evaluates 17 conditions covering evidence sufficiency, source coverage, provider diversity, and five quality dimensions, producing typed `ResearchGap` objects with stable SHA256-based IDs. No LLM calls, no network access, no optional dependencies. The research engine is not yet implemented. All domain contracts, adapters, normalization, claim extraction, and gap analysis layers are stable and importable.
+RC8 delivers a standalone CLI (`research-core`) and external consumer demo. The full RC4–RC7 pipeline runs in fixture mode with no network access and no API keys.
+
+---
+
+## Quick Start
+
+```bash
+pip install research-core
+
+# Markdown output (default)
+research-core run "What are the key drivers of Arctic sea ice decline?" --fixture
+
+# JSON output
+research-core run "Your question" --fixture --format json
+
+# Via Python module
+python -m research_core.cli run "Your question" --fixture
+```
 
 ---
 
@@ -39,40 +56,19 @@ ResearchRequest
   → ResearchResult
 ```
 
-The contract layer is fully defined. Both the knowledge adapter and the web search adapter are live:
+### Library usage
 
 ```python
-from research_core.adapters.knowledge import KnowledgeAdapter
-from research_core.protocols.knowledge import KnowledgeRetrievalRequest
-from research_core import ResearchRequest
+from research_core.cli.providers import build_fixture_engine
+from research_core.contracts.request import ResearchRequest
+from research_core.renderers import MarkdownRenderer
 
-adapter = KnowledgeAdapter(store_root="/path/to/knowledge_store")
-request = ResearchRequest(question="What are the deployment risks for SMRs?")
-k_request = KnowledgeRetrievalRequest(
-    query="SMR deployment barriers licensing",
-    parent_request=request,
-    profiles=("smr-general",),
-)
-result = adapter.retrieve(k_request)
-print(f"Evidence: {len(result.evidence)} items")
+engine = build_fixture_engine()
+result = engine.run(ResearchRequest(question="Climate tipping points"))
+print(MarkdownRenderer().render(result))
 ```
 
-```python
-from research_core.adapters.web import WebSearchAdapter
-from research_core.protocols.web import WebSearchRequest
-from research_core import ResearchRequest
-
-adapter = WebSearchAdapter()
-request = ResearchRequest(question="What are the deployment risks for SMRs?")
-w_request = WebSearchRequest(
-    query="SMR deployment barriers licensing",
-    parent_request=request,
-)
-result = adapter.search(w_request)
-print(f"Evidence: {len(result.evidence)} items")
-```
-
-Future public API direction (RC8+):
+### Production usage (custom providers)
 
 ```python
 from research_core import ResearchEngine, ResearchRequest
@@ -82,92 +78,115 @@ engine = ResearchEngine(
     profile_provider=MyProfileRegistry(),
     synthesizer=MyLLMSynthesizer(),
 )
-
 result = engine.run(request)
 ```
 
-The structured result exposes: `sources`, `evidence`, `claims`, `contradictions`,
-`gaps`, `open_questions`, `synthesis`, `quality`, `trace`.
+---
+
+## CLI Reference
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `research-core run QUESTION [--fixture] [--format markdown\|json]` | Run a research pipeline |
+| `research-core --version` | Print version |
+| `research-core --help` | Show help |
+
+### Options for `run`
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--format {markdown,json}` | `markdown` | Output format |
+| `--fixture` | off | Use deterministic in-memory providers |
+| `--profile PROFILE_ID` | `default` | Profile ID |
+| `--web` | off | Enable web evidence |
+| `--strict` | off | Fail on missing evidence |
+
+### Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success (COMPLETE or PARTIAL result) |
+| `2` | Usage error |
+| `3` | Blank or invalid question |
+| `4` | Unknown profile |
+| `5` | Provider failure |
+| `6` | Pipeline execution failure |
+| `7` | Output rendering failure |
+| `8` | No providers configured (add `--fixture`) |
+
+See [docs/cli/EXIT_CODES.md](docs/cli/EXIT_CODES.md) for full reference.
 
 ---
 
 ## Current Phase
 
-**RC6 — Gap Analysis and Quality Diagnostics**
+**RC8 — Standalone CLI and External Consumer Demo**
 
 This phase delivers:
 
-- `src/research_core/analysis/` — full gap analysis package
-- `src/research_core/diagnostics/__init__.py` — thin re-export for clean public API path
-- `DeterministicGapAnalyzer` — 17 deterministic gap conditions, no LLM, no network
-- `GapAnalysisConfig` — configurable thresholds with stable SHA256 fingerprint
-- Five quality dimensions: relevance, authority, recency, extraction_confidence, provenance_completeness
-- Score non-fabrication: missing values remain `None`, never coerced to `0.0`
-- Conservative recommended status: any gap → PARTIAL; gap-free with evidence → COMPLETE
-- 17 test modules in `tests/diagnostics/`, pytest marker `diagnostics` (199 tests)
+- `research-core` console script (installable via `pip install research-core`)
+- `research_core.cli` package — `app`, `parser`, `commands`, `output`, `providers`, `config`, `exit_codes`
+- `research-core run` subcommand with `--format markdown|json`, `--fixture`, `--profile`, `--web`, `--strict`
+- Full RC4–RC7 pipeline wired in fixture mode: normalizer → ranker → claim extractor → gap analyzer → synthesizer
+- Deterministic fixture providers (in-memory, fixed clock at 2024-06-01T00:00:00Z)
+- Stdout/stderr discipline: output on stdout, errors on stderr, no tracebacks
+- `python -m research_core.cli` entrypoint
+- 8 CLI test modules, pytest marker `cli`
+- Apache License 2.0
+- `examples/external_consumer/` — standalone library usage demo
+- `docs/cli/` — CLI, EXIT_CODES, EXTERNAL_CONSUMER references
+
+**RC7 deliverables** (still present):
+
+- `src/research_core/engine.py` — `ResearchEngine` with full RC4–RC7 pipeline
+- `src/research_core/synthesis/` — `SynthesisResult`, `DeterministicSynthesizer`
+- `src/research_core/renderers/` — `MarkdownRenderer` with snapshot tests
+- `src/research_core/contracts/result.py` — `ResearchResult`, `ResearchStatus`
+
+**RC6 deliverables** (still present):
+
+- `src/research_core/analysis/` — `DeterministicGapAnalyzer`, 17 gap conditions
 - `docs/diagnostics/GAP_ANALYSIS.md`, `QUALITY_DIAGNOSTICS.md`, `DIAGNOSTIC_CONTRACTS.md`
-- `examples/analyze_gaps.py`
 
 **RC5 deliverables** (still present):
 
-- `src/research_core/claims/` — full claim extraction package
-- `DeterministicClaimExtractor` — rule-based, deterministic, no LLM, no network
-- Sentence segmentation, clause splitting, assertiveness filter (50+ abbreviations, bullets, CRLF)
-- Claim type classification (NORMATIVE/PREDICTIVE/CAUSAL/COMPARATIVE/QUANTITATIVE/DEFINITIONAL/FACTUAL/UNKNOWN)
-- Modality detection (CONDITIONAL/REQUIRED/RECOMMENDED/PROBABLE/POSSIBLE/ASSERTED) with qualifier capture
-- Polarity detection (POSITIVE/NEGATED/MIXED) — negation never removed from text
-- Quantitative expression extraction (7 regex patterns, URL/version false-positive guard)
-- Temporal expression extraction (8 patterns, relative expressions never resolved)
-- Attribution extraction (`According to X`, `X said/reported [that]`)
-- Exact deduplication (same-parent collapse, cross-source preserved)
-- Full extraction diagnostics with count reconciliation
-- 18 test modules in `tests/claims/`, pytest marker `claims`
-- `docs/claims/CLAIM_EXTRACTION.md` and `docs/claims/CLAIM_CONTRACTS.md`
-- `examples/extract_claims.py`
+- `src/research_core/claims/` — `DeterministicClaimExtractor`
+- `docs/claims/CLAIM_EXTRACTION.md`, `CLAIM_CONTRACTS.md`
 
 **RC4 deliverables** (still present):
 
-- `src/research_core/normalization/` — `NormalizationService`, `RankingService`, segmentation, dedup
-- Provider-neutral evidence normalization and deterministic ranking with full explainability
-- SSRF-hardened web fetcher with per-hop redirect validation
+- `src/research_core/normalization/` — `NormalizationService`, `RankingService`
 
 **RC3 deliverables** (still present):
 
-- `src/research_core/adapters/web/` — `WebSearchAdapter`, `WebCache`, extractors, fetch, search, mapping
-- `WebSearchResult` (RC3 contract correction) — bundles sources + evidence, same pattern as RC2
-- DuckDuckGo search via `ddgs` or `duckduckgo_search` (lazy import)
-- Page fetching via `requests` with 10 MB limit and streaming (lazy import)
-- Content extraction pipeline: `trafilatura` (HTML), `pypdf` (PDF), `python-docx` (DOCX), plaintext fallback
-- Optional disk cache with atomic writes and base64 for bytes fields
-- `research-core[web]` optional dependency group
+- `src/research_core/adapters/web/` — `WebSearchAdapter`
 
 **RC2 deliverables** (still present):
 
-- `src/research_core/adapters/knowledge/` — `KnowledgeAdapter` and type mapping
-- `KnowledgeRetrievalResult` (RC1 contract correction) — bundles sources + evidence
-- Score normalization from knowledge-layer `[0, ~2.1]` to `[0.0, 1.0]`
-- Multi-profile retrieval with deduplication and re-ranking
-- Lazy optional dependency: importable without `knowledge` installed
+- `src/research_core/adapters/knowledge/` — `KnowledgeAdapter`
 
 **RC1 deliverables** (still present):
 
-- `src/research_core/contracts/` — all typed domain contracts (frozen dataclasses)
-- `src/research_core/protocols/` — provider protocol boundaries (structural protocols)
+- `src/research_core/contracts/` — all typed domain contracts
+- `src/research_core/protocols/` — provider protocol boundaries
 - `src/research_core/exceptions.py` — typed exception hierarchy
-- `docs/architecture/CONTRACTS.md` — contract reference documentation
 
 **RC0 deliverables** (still present):
 
-- `docs/product/PRODUCT_BRIEF.md` — users, use cases, non-goals, success criteria
-- `docs/architecture/ARCHITECTURE.md` — component model, pipeline, boundaries
-- `docs/architecture/DEPENDENCY_RULES.md` — enforceable dependency rules
-- `docs/architecture/ROADMAP.md` — RC0 through RC9 with acceptance criteria
+- `docs/product/PRODUCT_BRIEF.md`
+- `docs/architecture/ARCHITECTURE.md`, `DEPENDENCY_RULES.md`, `ROADMAP.md`
 
 ---
 
 ## Installation
 
-The package is not yet released. For development setup:
+```bash
+pip install research-core
+```
+
+For development:
 
 ```zsh
 python3 -m venv .venv
@@ -175,22 +194,27 @@ source .venv/bin/activate
 python3 -m pip install -e ".[dev]"
 ```
 
-Requires Python 3.11 or later. See `docs/architecture/ARCHITECTURE.md` for the rationale
-behind this version floor.
+Requires Python 3.11 or later.
 
 ---
 
 ## Development
 
 ```zsh
-# Run tests
+# Run all tests
 python3 -m pytest
+
+# CLI tests only
+python3 -m pytest -m cli
 
 # Lint
 python3 -m ruff check .
 
 # Type check
 python3 -m mypy src
+
+# Build wheel
+python3 -m build
 ```
 
 ---
@@ -199,6 +223,9 @@ python3 -m mypy src
 
 | Document | Purpose |
 |---|---|
+| [CLI Reference](docs/cli/CLI.md) | Commands, options, output formats |
+| [Exit Codes](docs/cli/EXIT_CODES.md) | All exit codes with descriptions |
+| [External Consumer](docs/cli/EXTERNAL_CONSUMER.md) | Using research-core as a library |
 | [Product Brief](docs/product/PRODUCT_BRIEF.md) | Users, use cases, non-goals, risks |
 | [Architecture](docs/architecture/ARCHITECTURE.md) | Pipeline, components, boundaries |
 | [Contracts Reference](docs/architecture/CONTRACTS.md) | Contract types, validation, serialization |
@@ -219,10 +246,11 @@ python3 -m mypy src
 `research-core` does not and will not:
 
 - Generate strategy, recommendations, or decisions
-- Produce domain-specific report sections (power implications, rack architecture, etc.)
+- Produce domain-specific report sections
 - Depend on editorial, delivery, or CMS layers
-- Replace or wrap the legacy `research_agent` CLI wholesale
-- Import from `functional_agents`, `strategy`, `editorial`, or `deliverables`
+- Make LLM calls or HTTP requests in its core pipeline
+- Import vendor SDKs (`openai`, `anthropic`, etc.)
+- Use third-party CLI libraries (`click`, `typer`, `rich`, `fire`)
 - Silently substitute a default profile when the requested profile is absent
 
 ---
@@ -237,13 +265,13 @@ python3 -m mypy src
 | RC3 | Web Search Adapter ✓ |
 | RC4 | Evidence Normalization and Ranking ✓ |
 | RC5 | Claim Extraction ✓ |
-| RC6 | Research Gap Analysis and Quality Diagnostics ← current |
-| RC7 | Synthesis and Renderers |
-| RC8 | Standalone CLI and External Consumer Demo |
+| RC6 | Research Gap Analysis and Quality Diagnostics ✓ |
+| RC7 | Synthesis and Renderers ✓ |
+| RC8 | Standalone CLI and External Consumer Demo ← current |
 | RC9 | Legacy Component Migration |
 
 ---
 
 ## License
 
-License: To be determined. Decision required before RC8.
+Apache License 2.0. See [LICENSE](LICENSE) for the full text.
