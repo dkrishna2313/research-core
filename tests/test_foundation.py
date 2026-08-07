@@ -58,7 +58,6 @@ PROHIBITED_RUNTIME_IMPORTS = [
 # Only modules from future phases remain in this list.
 PREMATURE_IMPLEMENTATION_MODULES = [
     "research_core.providers",
-    "research_core.cli",
 ]
 
 # Modules that MUST exist as of RC1.

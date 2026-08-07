@@ -303,9 +303,9 @@ The following were open questions that have been decided and are now binding on 
 
 Synthesis is provider-based. The core is not coupled to any LLM SDK. An LLM-assisted synthesis provider may be the primary production path. Deterministic synthesis must remain supported for tests, constrained workflows, reproducibility, and fallback behavior. No synthesis implementation is introduced before RC7.
 
-### License
+### License (resolved — binding for RC8)
 
-License: To be determined. Decision required before RC8.
+Apache License 2.0. See the root `LICENSE` file.
 
 ---
 

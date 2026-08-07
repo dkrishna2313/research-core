@@ -1,6 +1,6 @@
 # Roadmap — research-core
 
-**Version:** RC7
+**Version:** RC8
 
 ---
 
@@ -438,7 +438,7 @@ All acceptance criteria met. Full pipeline is testable end-to-end.
 
 ---
 
-## RC8 — Standalone CLI and External Consumer Demo
+## RC8 — Standalone CLI and External Consumer Demo ✓ COMPLETE
 
 ### Objective
 
@@ -446,18 +446,30 @@ Provide a usable standalone CLI and an external consumer demo that shows how to 
 
 ### Scope
 
-- `src/research_core/cli.py` (or `src/research_core/__main__.py`)
-- Entry point registered in `pyproject.toml`
-- CLI arguments: question, optional profile, optional web flag, output format
-- Unknown profile raises an error and exits with a non-zero code
-- CLI tests
-- `examples/` consumer demo script
+- `src/research_core/cli/` package — `app`, `parser`, `commands`, `output`, `providers`, `config`, `exit_codes`
+- `research-core` console script entry point registered in `[project.scripts]` in `pyproject.toml`
+- `research-core run QUESTION [--fixture] [--format markdown|json] [--profile ID] [--web] [--strict]`
+- Markdown default output format; JSON via `--format json`
+- `--fixture` mode: deterministic in-memory providers, fixed clock (2024-06-01T00:00:00Z)
+- Full RC4–RC7 pipeline in fixture mode: normalizer → ranker → claim extractor → gap analyzer → synthesizer
+- Exit codes as `IntEnum` (SUCCESS=0, USAGE_ERROR=2, INVALID_REQUEST=3, UNKNOWN_PROFILE=4, PROVIDER_FAILURE=5, EXECUTION_FAILURE=6, OUTPUT_FAILURE=7, CONFIGURATION_FAILURE=8)
+- Stdout/stderr discipline: result to stdout, errors to stderr, no tracebacks to stderr
+- PARTIAL result exits with code 0 (valid research artifact)
+- `python -m research_core.cli` entrypoint via `__main__.py`
+- 8 CLI test modules in `tests/cli/`, pytest marker `cli`
+- `examples/external_consumer/` — pyproject.toml, consumer.py, README.md
+- `docs/cli/CLI.md`, `docs/cli/EXIT_CODES.md`, `docs/cli/EXTERNAL_CONSUMER.md`
+- Apache License 2.0 (`LICENSE` file at repo root)
+- Version 0.8.0
 
 ### Non-Scope
 
-- Domain-specific CLI flags
-- Strategy or recommendation output
-- Legacy CLI replacement
+- LLM SDK (no `openai`, `anthropic`, etc.)
+- HTTP API or web server
+- UI or interactive mode
+- Persistence or background execution
+- Domain-specific logic or report sections
+- Third-party CLI libraries (no `click`, `typer`, `rich`, `fire`)
 
 ### Dependencies
 
@@ -465,22 +477,28 @@ RC7 complete.
 
 ### Deliverables
 
-1. `src/research_core/cli.py`
-2. Entry point in `pyproject.toml`
-3. CLI tests
-4. `examples/demo_consumer.py`
+1. `src/research_core/cli/` — full 8-file CLI package
+2. `[project.scripts]` entry point in `pyproject.toml`
+3. `tests/cli/` — 8 test modules with `cli` marker
+4. `examples/external_consumer/` — standalone library usage demo
+5. `docs/cli/` — CLI.md, EXIT_CODES.md, EXTERNAL_CONSUMER.md
+6. `LICENSE` — Apache License 2.0
+7. Version 0.8.0
 
 ### Acceptance Criteria
 
-- `research-core run "question"` executes and produces a structured result or Markdown output
-- Unknown profile exits non-zero with a clear error message
-- CLI does not import domain-specific logic
-- Consumer demo runs against a local fixture without a live knowledge store
-- Import boundary tests still pass
+- `research-core run "question" --fixture` executes and produces Markdown to stdout ✓
+- `research-core run "question" --fixture --format json` produces valid JSON to stdout ✓
+- Unknown profile exits with code 4 and clear error on stderr ✓
+- No providers configured without `--fixture` exits with code 8 and `--fixture` hint on stderr ✓
+- CLI does not import domain-specific logic, vendor SDKs, or third-party CLI libraries ✓
+- Consumer demo runs against a local fixture without a live knowledge store ✓
+- Import boundary tests still pass ✓
+- `mypy --strict` clean, ruff clean ✓
 
 ### Exit Criteria
 
-All acceptance criteria met. CLI is independently installable and functional.
+All acceptance criteria met. CLI is independently installable and functional. Apache 2.0 LICENSE present.
 
 ---
 
@@ -555,4 +573,4 @@ Synthesis is provider-based via a `Synthesizer` protocol. The core is not couple
 
 ### License
 
-License: To be determined. Decision required before RC8.
+Apache License 2.0. Decided before RC8. `LICENSE` file added to repo root. `pyproject.toml` metadata updated with `license = { text = "Apache-2.0" }` and OSI classifier. — **Binding for RC8.**
