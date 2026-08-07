@@ -20,6 +20,10 @@ from __future__ import annotations
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from research_core.engine import ResearchEngine
 
 from research_core.fixtures.engine import (
     FIXTURE_CLOCK_TS,
@@ -52,7 +56,7 @@ def build_live_knowledge_engine(
     knowledge_store_path: Path,
     *,
     clock: Callable[[], datetime] | None = None,
-) -> object:
+) -> ResearchEngine:
     """Return a ResearchEngine backed by a live KnowledgeAdapter.
 
     All imports of optional components are deferred to this function body so

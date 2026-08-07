@@ -55,7 +55,8 @@ class TestLiveKnowledgeEnvVar:
         """With env var set, omitting --knowledge-store still selects live mode."""
         monkeypatch.setenv("RESEARCH_CORE_KNOWLEDGE_STORE", str(tmp_path))
         code = main(["run", "test question"])
-        # Path is valid but knowledge package may be absent → PROVIDER_FAILURE, not CONFIGURATION_FAILURE
+        # Path is valid but knowledge package may be absent
+        # → PROVIDER_FAILURE, not CONFIGURATION_FAILURE
         assert code != ExitCode.CONFIGURATION_FAILURE
 
     def test_env_var_nonexistent_path_exits_8(self, tmp_path, monkeypatch, capsys):
