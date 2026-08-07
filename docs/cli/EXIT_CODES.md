@@ -13,7 +13,7 @@ The `research-core` CLI uses a stable set of exit codes to signal outcomes. Thes
 | `5` | `PROVIDER_FAILURE` | A knowledge or web provider raised an error |
 | `6` | `EXECUTION_FAILURE` | The research pipeline failed to complete |
 | `7` | `OUTPUT_FAILURE` | The result could not be rendered or serialized |
-| `8` | `CONFIGURATION_FAILURE` | No providers configured (add `--fixture` or configure providers) |
+| `8` | `CONFIGURATION_FAILURE` | No providers configured, or conflicting flags (`--fixture` + `--knowledge-store`, `--web` in live mode, invalid store path) |
 
 ## Notes
 

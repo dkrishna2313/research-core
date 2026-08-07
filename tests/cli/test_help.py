@@ -52,19 +52,19 @@ class TestVersion:
             main(["--version"])
         assert exc.value.code == 0
 
-    def test_version_reports_0_8_0(self, capsys):
+    def test_version_reports_0_8_1(self, capsys):
         with pytest.raises(SystemExit):
             main(["--version"])
         captured = capsys.readouterr()
         combined = captured.out + captured.err
-        assert "0.8.0" in combined
+        assert "0.8.1" in combined
 
     def test_version_contains_program_name(self, capsys):
         import research_core
 
         with pytest.raises(SystemExit):
             main(["--version"])
-        assert research_core.__version__ == "0.8.0"
+        assert research_core.__version__ == "0.8.1"
 
 
 @pytest.mark.cli

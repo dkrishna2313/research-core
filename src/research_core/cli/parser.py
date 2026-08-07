@@ -83,6 +83,17 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     run_parser.add_argument(
+        "--knowledge-store",
+        metavar="PATH",
+        dest="knowledge_store",
+        default=None,
+        help=(
+            "Path to a knowledge_store directory for live Knowledge Layer retrieval. "
+            "Mutually exclusive with --fixture. "
+            "Can also be set via the RESEARCH_CORE_KNOWLEDGE_STORE environment variable."
+        ),
+    )
+    run_parser.add_argument(
         "--strict",
         action="store_true",
         default=False,

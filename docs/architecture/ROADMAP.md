@@ -502,6 +502,57 @@ All acceptance criteria met. CLI is independently installable and functional. Ap
 
 ---
 
+## RC8.1 — Live Knowledge CLI Execution ✓ COMPLETE
+
+### Objective
+
+Wire the existing RC2 `KnowledgeAdapter` through the RC8 CLI so `research-core` can perform real research against a local Knowledge Layer store without fixture data.
+
+### Scope
+
+- `--knowledge-store PATH` flag on `research-core run`
+- `RESEARCH_CORE_KNOWLEDGE_STORE` environment variable (CLI flag wins)
+- `resolve_knowledge_store()` + `validate_knowledge_store()` in `src/research_core/cli/config.py`
+- `build_live_knowledge_engine(knowledge_store_path)` in `src/research_core/cli/providers.py`
+- `_PassThroughProfileProvider` — accepts any profile ID for live mode
+- Conflict detection: `--fixture` + `--knowledge-store` → exit 8; `--web` in live mode → exit 8
+- Path validation: non-existent or non-directory path → exit 8
+- Tests: `tests/cli/test_knowledge_config.py`, `tests/cli/test_live_knowledge.py`, `tests/cli/test_live_knowledge_integration.py`
+- Docs: `docs/cli/LIVE_KNOWLEDGE.md`; updates to `CLI.md`, `EXIT_CODES.md`
+- Version 0.8.1
+
+### Non-Scope
+
+- Evidence indexing / embedding generation (separate knowledge-layer concern)
+- `--web` support in live knowledge mode
+- Remote knowledge stores
+
+### Dependencies
+
+RC8 complete.
+
+### Deliverables
+
+1. `--knowledge-store PATH` CLI flag + `RESEARCH_CORE_KNOWLEDGE_STORE` env var
+2. `resolve_knowledge_store()` + `validate_knowledge_store()` in `config.py`
+3. `build_live_knowledge_engine()` + `_PassThroughProfileProvider` in `providers.py`
+4. 3 new test modules in `tests/cli/`
+5. `docs/cli/LIVE_KNOWLEDGE.md` + updated `CLI.md` + updated `EXIT_CODES.md`
+6. Version 0.8.1
+
+### Acceptance Criteria
+
+- `research-core run QUESTION --knowledge-store PATH` reaches the provider layer (never exit 8) ✓
+- `--fixture` + `--knowledge-store` exits 8 with "mutually exclusive" message ✓
+- `--web` + `--knowledge-store` exits 8 ✓
+- Non-existent store path exits 8 ✓
+- `RESEARCH_CORE_KNOWLEDGE_STORE` env var recognized; CLI flag wins over env ✓
+- `_PassThroughProfileProvider.resolve()` accepts any profile ID ✓
+- Integration smoke test accepts exit 0 or 5 (empty store → provider failure) ✓
+- All existing CLI tests still pass ✓
+
+---
+
 ## RC9 — Legacy Component Migration
 
 ### Objective
