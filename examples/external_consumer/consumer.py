@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 
-from research_core.cli.providers import build_fixture_engine
 from research_core.contracts.request import ResearchRequest
 from research_core.contracts.result import ResearchStatus
+from research_core.fixtures import build_fixture_engine
 from research_core.renderers import MarkdownRenderer
 
 
