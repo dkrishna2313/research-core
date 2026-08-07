@@ -18,7 +18,7 @@ python consumer.py
 
 ## What it demonstrates
 
-- Importing `build_fixture_engine` from `research_core.cli.providers`
+- Importing `build_fixture_engine` from `research_core.fixtures`
 - Constructing a `ResearchRequest` directly
 - Running the engine to get a `ResearchResult`
 - Rendering the result as Markdown using `MarkdownRenderer`

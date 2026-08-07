@@ -11,7 +11,7 @@ pip install research-core
 ## Minimum viable consumer
 
 ```python
-from research_core.cli.providers import build_fixture_engine
+from research_core.fixtures import build_fixture_engine
 from research_core.contracts.request import ResearchRequest
 from research_core.renderers import MarkdownRenderer
 
@@ -29,7 +29,7 @@ print(MarkdownRenderer().render(result))
 `build_fixture_engine(*, use_web=False, clock=None)` — builds a fully wired `ResearchEngine` with deterministic in-memory providers. Suitable for development, testing, and demos.
 
 ```python
-from research_core.cli.providers import build_fixture_engine
+from research_core.fixtures import build_fixture_engine
 
 engine = build_fixture_engine()
 ```
