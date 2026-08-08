@@ -45,7 +45,72 @@ class MarkdownRenderer:
 
         renderer = MarkdownRenderer()
         md = renderer.render(result)
+        md_answer = renderer.render_answer_only(result)
     """
+
+    def render_answer_only(self, result: ResearchResult) -> str:
+        """Render only the synthesized answer sections.
+
+        Hides all report machinery (status, sources, evidence, claims,
+        quality diagnostics, research gaps, execution trace). The full
+        ResearchResult is unchanged — this is presentation-only.
+
+        Returns a non-empty string ending with exactly one newline.
+        No trailing whitespace on any line.
+        """
+        lines: list[str] = []
+
+        def blank() -> None:
+            lines.append("")
+
+        def line(text: str) -> None:
+            lines.append(text)
+
+        # Research question as title
+        lines.append(f"# {result.request.question}")
+        blank()
+
+        syn = result.synthesis
+        if syn is None:
+            line("*Synthesis not available — the research pipeline did not produce a result.*")
+            blank()
+        elif syn.sections:
+            for sec in sorted(syn.sections, key=lambda s: s.order):
+                lines.append(f"## {sec.title}")
+                blank()
+                if sec.body:
+                    line(sec.body)
+                blank()
+            if syn.citations:
+                lines.append("## Citations")
+                blank()
+                for cit in syn.citations:
+                    label = cit.label or cit.citation_id
+                    line(
+                        f"{label} claim:`{cit.claim_id}` "
+                        f"evidence:`{cit.evidence_id}` "
+                        f"source:`{cit.source_id}`"
+                    )
+                blank()
+        else:
+            # Legacy synthesis without structured sections
+            if syn.narrative:
+                line(syn.narrative)
+                blank()
+            if syn.key_findings:
+                lines.append("## Key Findings")
+                blank()
+                for finding in syn.key_findings:
+                    line(f"- {finding}")
+                blank()
+            if not syn.narrative and not syn.key_findings:
+                line("*No synthesized content available.*")
+                blank()
+
+        cleaned = [ln.rstrip() for ln in lines]
+        while cleaned and cleaned[-1] == "":
+            cleaned.pop()
+        return "\n".join(cleaned) + "\n"
 
     def render(self, result: ResearchResult) -> str:
         """Render *result* to a Markdown string.

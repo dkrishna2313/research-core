@@ -102,5 +102,16 @@ def build_parser() -> argparse.ArgumentParser:
             "Exit code 6 (EXECUTION_FAILURE) when the pipeline would be partial."
         ),
     )
+    run_parser.add_argument(
+        "--answer-only",
+        action="store_true",
+        default=False,
+        dest="answer_only",
+        help=(
+            "Print only the synthesized answer. "
+            "The full research pipeline still executes; only the presentation is reduced. "
+            "Supported with Markdown output only (incompatible with --format json)."
+        ),
+    )
 
     return parser

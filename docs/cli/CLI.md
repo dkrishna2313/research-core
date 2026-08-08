@@ -49,6 +49,7 @@ research-core run QUESTION [OPTIONS]
 | `--profile PROFILE_ID` | `default` | Profile ID to use |
 | `--web` | off | Enable web evidence providers (fixture mode only) |
 | `--strict` | off | Fail on any missing evidence |
+| `--answer-only` | off | Print only the synthesized answer (Markdown only) |
 
 **Examples:**
 
@@ -61,6 +62,9 @@ research-core run "Climate tipping points" --fixture --format json
 
 # Specific profile
 research-core run "Ocean acidification" --fixture --profile demo
+
+# Answer-only view
+research-core run "Climate tipping points" --fixture --answer-only
 ```
 
 ## Output formats
@@ -80,6 +84,27 @@ A machine-readable serialized `ResearchResult`. All keys are sorted alphabetical
 ```bash
 research-core run "question" --fixture --format json | jq '.status'
 ```
+
+### Answer-only (presentation mode)
+
+`--answer-only` renders only the synthesized answer sections. The full research pipeline still executes and produces a complete `ResearchResult`; only the presentation is reduced.
+
+Report machinery sections (status, sources, evidence listing, claims, quality diagnostics, execution trace) are hidden. The synthesized content — summary, derived claims, limitations, citations — is preserved.
+
+```bash
+# Fixture answer-only
+research-core run "What are the key trends?" --fixture --answer-only
+
+# Live Knowledge answer-only
+research-core run "Sports industry outlook" \
+    --knowledge-store ~/data/knowledge_store \
+    --answer-only
+
+# Explicit Markdown is equivalent to default
+research-core run "question" --fixture --format markdown --answer-only
+```
+
+`--answer-only` is supported only with Markdown output. Combining it with `--format json` exits with code 8 (CONFIGURATION_FAILURE) and a clear error message.
 
 ## Fixture mode
 

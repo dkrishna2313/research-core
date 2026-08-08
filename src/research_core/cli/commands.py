@@ -52,6 +52,7 @@ def run_command(
     use_web: bool = getattr(args, "web", False)
     fixture_mode: bool = getattr(args, "fixture", False)
     strict_mode: bool = getattr(args, "strict", False)
+    answer_only: bool = getattr(args, "answer_only", False)
     profile: str | None = getattr(args, "profile", None)
     knowledge_store_arg: str | None = getattr(args, "knowledge_store", None)
 
@@ -59,6 +60,13 @@ def run_command(
     knowledge_store_path = resolve_knowledge_store(knowledge_store_arg)
 
     # 4. Conflict detection
+    if answer_only and fmt == OutputFormat.JSON:
+        return (
+            ExitCode.CONFIGURATION_FAILURE,
+            "",
+            "error: --answer-only is only supported with Markdown output.\n",
+        )
+
     if fixture_mode and knowledge_store_path is not None:
         return (
             ExitCode.CONFIGURATION_FAILURE,
@@ -155,7 +163,7 @@ def run_command(
 
     # 8. Render output
     try:
-        output = render_result(result, fmt)
+        output = render_result(result, fmt, answer_only=answer_only)
     except Exception as exc:  # noqa: BLE001
         return (
             ExitCode.OUTPUT_FAILURE,

@@ -1,10 +1,10 @@
 # research-core
 
-**Status: RC8 — Standalone CLI and External Consumer Demo**
+**Status: RC8.1.1 — Answer-Only CLI View**
 
 `research-core` is a domain-neutral Python research library. It provides a structured pipeline from a research question through knowledge retrieval, evidence ranking, claim analysis, contradiction detection, gap identification, and synthesis to a structured result.
 
-RC8 delivers a standalone CLI (`research-core`) and external consumer demo. The full RC4–RC7 pipeline runs in fixture mode with no network access and no API keys.
+RC8.1 adds live Knowledge Layer execution via `--knowledge-store`. RC8.1.1 adds `--answer-only` for a concise synthesized answer view while still running the full research pipeline internally.
 
 ---
 
@@ -18,6 +18,11 @@ research-core run "What are the key drivers of Arctic sea ice decline?" --fixtur
 
 # JSON output
 research-core run "Your question" --fixture --format json
+
+# Answer-only view (synthesized answer, full pipeline still runs)
+research-core run "What are the major trends shaping the sports industry?" \
+    --knowledge-store /path/to/knowledge_store \
+    --answer-only
 
 # Via Python module
 python -m research_core.cli run "Your question" --fixture

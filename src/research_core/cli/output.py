@@ -14,14 +14,24 @@ from research_core.contracts.result import ResearchResult
 from research_core.contracts.serialization import serialize
 
 
-def render_result(result: ResearchResult, fmt: OutputFormat) -> str:
+def render_result(
+    result: ResearchResult,
+    fmt: OutputFormat,
+    *,
+    answer_only: bool = False,
+) -> str:
     """Render *result* according to *fmt*.
+
+    When answer_only is True the Markdown renderer emits only the synthesized
+    answer sections (incompatible with JSON — caller must reject that combo).
 
     Returns a string ending with exactly one newline.
     Raises RuntimeError if rendering fails (caller maps to OUTPUT_FAILURE).
     """
     if fmt == OutputFormat.JSON:
         return _render_json(result)
+    if answer_only:
+        return _render_markdown_answer_only(result)
     return _render_markdown(result)
 
 
@@ -29,6 +39,12 @@ def _render_markdown(result: ResearchResult) -> str:
     from research_core.renderers import MarkdownRenderer
 
     return MarkdownRenderer().render(result)
+
+
+def _render_markdown_answer_only(result: ResearchResult) -> str:
+    from research_core.renderers import MarkdownRenderer
+
+    return MarkdownRenderer().render_answer_only(result)
 
 
 def _render_json(result: ResearchResult) -> str:
