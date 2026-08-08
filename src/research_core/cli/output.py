@@ -19,11 +19,13 @@ def render_result(
     fmt: OutputFormat,
     *,
     answer_only: bool = False,
+    answer_plus: bool = False,
 ) -> str:
     """Render *result* according to *fmt*.
 
-    When answer_only is True the Markdown renderer emits only the synthesized
-    answer sections (incompatible with JSON — caller must reject that combo).
+    answer_only: synthesized answer sections only (no diagnostics, no citations).
+    answer_plus: answer with brief diagnostic context and source-titled citations.
+    Both are incompatible with JSON — the caller must reject those combos.
 
     Returns a string ending with exactly one newline.
     Raises RuntimeError if rendering fails (caller maps to OUTPUT_FAILURE).
@@ -32,6 +34,8 @@ def render_result(
         return _render_json(result)
     if answer_only:
         return _render_markdown_answer_only(result)
+    if answer_plus:
+        return _render_markdown_answer_plus(result)
     return _render_markdown(result)
 
 
@@ -45,6 +49,12 @@ def _render_markdown_answer_only(result: ResearchResult) -> str:
     from research_core.renderers import MarkdownRenderer
 
     return MarkdownRenderer().render_answer_only(result)
+
+
+def _render_markdown_answer_plus(result: ResearchResult) -> str:
+    from research_core.renderers import MarkdownRenderer
+
+    return MarkdownRenderer().render_answer_plus(result)
 
 
 def _render_json(result: ResearchResult) -> str:

@@ -111,11 +111,22 @@ class TestAnswerOnlyContent:
     def test_answer_only_excludes_research_gaps_section(self, capsys):
         main(["run", "test", "--fixture", "--answer-only"])
         out = capsys.readouterr().out
-        # Top-level report section must not appear; synthesis may include its own gaps section
-        assert "## Research Gaps\n" not in out or out.count("## Research Gaps") == 0 or (
-            # If it appears, it must be from synthesis (which is allowed), not the report
-            True  # synthesis sections are allowed to contain gap summaries
-        )
+        assert "## Research Gaps" not in out
+
+    def test_answer_only_excludes_quality_and_coverage_section(self, capsys):
+        main(["run", "test", "--fixture", "--answer-only"])
+        out = capsys.readouterr().out
+        assert "## Quality and Coverage" not in out
+
+    def test_answer_only_excludes_limitations_section(self, capsys):
+        main(["run", "test", "--fixture", "--answer-only"])
+        out = capsys.readouterr().out
+        assert "## Limitations" not in out
+
+    def test_answer_only_excludes_citations(self, capsys):
+        main(["run", "test", "--fixture", "--answer-only"])
+        out = capsys.readouterr().out
+        assert "## Citations" not in out
 
     def test_answer_only_excludes_execution_trace(self, capsys):
         main(["run", "test", "--fixture", "--answer-only"])
@@ -246,3 +257,127 @@ class TestAnswerOnlyStrictMode:
         if code != ExitCode.SUCCESS:
             # Strict rejection: stdout must be empty
             assert out == ""
+
+
+@pytest.mark.cli
+class TestAnswerPlusBasics:
+    def test_answer_plus_exits_zero(self, capsys):
+        code = main(["run", "test", "--fixture", "--answer-plus"])
+        assert code == ExitCode.SUCCESS
+        capsys.readouterr()
+
+    def test_answer_plus_stderr_empty(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        assert capsys.readouterr().err == ""
+
+    def test_answer_plus_ends_with_single_newline(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert out.endswith("\n")
+        assert not out.endswith("\n\n")
+
+    def test_answer_plus_no_trailing_whitespace(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        for ln in out.splitlines():
+            assert ln == ln.rstrip()
+
+    def test_answer_plus_is_deterministic(self, capsys):
+        main(["run", "determinism check", "--fixture", "--answer-plus"])
+        out1 = capsys.readouterr().out
+        main(["run", "determinism check", "--fixture", "--answer-plus"])
+        out2 = capsys.readouterr().out
+        assert out1 == out2
+
+
+@pytest.mark.cli
+class TestAnswerPlusContent:
+    def test_answer_plus_contains_evidence_derived_claims(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Evidence-Derived Claims" in out
+
+    def test_answer_plus_contains_quality_and_coverage(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Quality and Coverage" in out
+
+    def test_answer_plus_contains_research_gaps(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Research Gaps" in out
+
+    def test_answer_plus_contains_limitations(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Limitations" in out
+
+    def test_answer_plus_contains_citations(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Citations" in out
+
+    def test_answer_plus_citations_show_source_title(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "Fixture Knowledge Source" in out
+
+    def test_answer_plus_excludes_status(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Status" not in out
+
+    def test_answer_plus_excludes_sources_section(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Sources" not in out
+
+    def test_answer_plus_excludes_execution_trace(self, capsys):
+        main(["run", "test", "--fixture", "--answer-plus"])
+        out = capsys.readouterr().out
+        assert "## Execution Trace" not in out
+
+    def test_answer_plus_briefer_than_full(self, capsys):
+        main(["run", "test", "--fixture"])
+        full = capsys.readouterr().out
+        main(["run", "test", "--fixture", "--answer-plus"])
+        plus = capsys.readouterr().out
+        assert len(plus) < len(full)
+
+    def test_answer_plus_longer_than_answer_only(self, capsys):
+        main(["run", "test", "--fixture", "--answer-only"])
+        only = capsys.readouterr().out
+        main(["run", "test", "--fixture", "--answer-plus"])
+        plus = capsys.readouterr().out
+        assert len(plus) > len(only)
+
+
+@pytest.mark.cli
+class TestAnswerPlusConflicts:
+    def test_json_answer_plus_exits_configuration_failure(self, capsys):
+        code = main(["run", "q", "--fixture", "--format", "json", "--answer-plus"])
+        assert code == ExitCode.CONFIGURATION_FAILURE
+        capsys.readouterr()
+
+    def test_json_answer_plus_stdout_empty(self, capsys):
+        main(["run", "q", "--fixture", "--format", "json", "--answer-plus"])
+        assert capsys.readouterr().out == ""
+
+    def test_json_answer_plus_stderr_mentions_flag(self, capsys):
+        main(["run", "q", "--fixture", "--format", "json", "--answer-plus"])
+        err = capsys.readouterr().err
+        assert "answer-plus" in err.lower() or "markdown" in err.lower()
+
+    def test_answer_only_and_answer_plus_mutually_exclusive(self, capsys):
+        code = main(["run", "q", "--fixture", "--answer-only", "--answer-plus"])
+        assert code == ExitCode.CONFIGURATION_FAILURE
+        capsys.readouterr()
+
+    def test_mutual_exclusion_stdout_empty(self, capsys):
+        main(["run", "q", "--fixture", "--answer-only", "--answer-plus"])
+        assert capsys.readouterr().out == ""
+
+    def test_mutual_exclusion_stderr_mentions_both_flags(self, capsys):
+        main(["run", "q", "--fixture", "--answer-only", "--answer-plus"])
+        err = capsys.readouterr().err
+        assert "answer-only" in err and "answer-plus" in err

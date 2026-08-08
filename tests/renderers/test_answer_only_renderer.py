@@ -1,9 +1,8 @@
 """
-Tests for MarkdownRenderer.render_answer_only() (RC8.1.1).
+Tests for MarkdownRenderer.render_answer_only() and render_answer_plus() (RC8.1.1).
 
-Covers: synthesis content present, report sections absent, citations,
-no-synthesis fallback, trailing newline, trailing whitespace, determinism,
-full render unchanged.
+render_answer_only: pure answer — no diagnostics, no citations.
+render_answer_plus: answer + brief diagnostics (2 lines each) + source-titled citations.
 """
 
 from __future__ import annotations
@@ -105,22 +104,18 @@ class TestRenderAnswerOnlyContent:
 
 @pytest.mark.renderers
 class TestRenderAnswerOnlyCitations:
-    def test_citations_present_when_synthesis_has_them(self):
+    def test_answer_only_has_no_citations_section(self):
+        """answer-only hides citations entirely."""
         result = _make_result()
-        if result.synthesis and result.synthesis.citations:
-            out = MarkdownRenderer().render_answer_only(result)
-            assert "## Citations" in out
+        out = MarkdownRenderer().render_answer_only(result)
+        assert "## Citations" not in out
 
-    def test_citations_show_source_title_not_id(self):
+    def test_answer_only_has_no_diagnostic_sections(self):
         result = _make_result()
-        if result.synthesis and result.synthesis.citations and result.sources:
-            out = MarkdownRenderer().render_answer_only(result)
-            # Source title must appear; raw source_id must not appear in citations block
-            src = result.sources[0]
-            if src.title:
-                assert src.title in out
-            # Raw source_id format (backtick-wrapped) must not appear
-            assert f"source:`{src.source_id}`" not in out
+        out = MarkdownRenderer().render_answer_only(result)
+        assert "## Quality and Coverage" not in out
+        assert "## Research Gaps" not in out
+        assert "## Limitations" not in out
 
 
 @pytest.mark.renderers
@@ -150,7 +145,97 @@ class TestRenderAnswerOnlyVsFullRender:
         result = _make_result()
         renderer = MarkdownRenderer()
         out1 = renderer.render(result)
-        # Call render_answer_only to ensure it has no side effects
         renderer.render_answer_only(result)
         out2 = renderer.render(result)
         assert out1 == out2
+
+
+@pytest.mark.renderers
+class TestRenderAnswerPlusFormat:
+    def test_ends_with_single_newline(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert out.endswith("\n")
+        assert not out.endswith("\n\n")
+
+    def test_no_trailing_whitespace_on_any_line(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        for ln in out.splitlines():
+            assert ln == ln.rstrip(), f"trailing whitespace: {ln!r}"
+
+    def test_is_deterministic(self):
+        result = _make_result()
+        renderer = MarkdownRenderer()
+        assert renderer.render_answer_plus(result) == renderer.render_answer_plus(result)
+
+
+@pytest.mark.renderers
+class TestRenderAnswerPlusContent:
+    def test_contains_evidence_derived_claims(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert "## Evidence-Derived Claims" in out
+
+    def test_contains_quality_and_coverage(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert "## Quality and Coverage" in out
+
+    def test_contains_research_gaps(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert "## Research Gaps" in out
+
+    def test_contains_limitations(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert "## Limitations" in out
+
+    def test_contains_citations_with_source_title(self):
+        result = _make_result()
+        if result.synthesis and result.synthesis.citations and result.sources:
+            out = MarkdownRenderer().render_answer_plus(result)
+            assert "## Citations" in out
+            src = result.sources[0]
+            if src.title:
+                assert src.title in out
+            assert f"source:`{src.source_id}`" not in out
+
+    def test_excludes_report_machinery(self):
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        assert "## Status" not in out
+        assert "## Sources" not in out
+        assert "## Execution Trace" not in out
+
+    def test_research_gaps_condensed_to_two_lines(self):
+        """Research Gaps body is truncated to at most 2 non-empty lines."""
+        result = _make_result()
+        out = MarkdownRenderer().render_answer_plus(result)
+        # Extract lines between ## Research Gaps and the next ## heading
+        in_gaps = False
+        gap_body_lines = []
+        for ln in out.splitlines():
+            if ln == "## Research Gaps":
+                in_gaps = True
+                continue
+            if in_gaps:
+                if ln.startswith("## "):
+                    break
+                if ln.strip():
+                    gap_body_lines.append(ln)
+        assert len(gap_body_lines) <= 2
+
+
+@pytest.mark.renderers
+class TestRenderAnswerSizing:
+    def test_answer_only_shorter_than_answer_plus(self):
+        result = _make_result()
+        renderer = MarkdownRenderer()
+        assert len(renderer.render_answer_only(result)) < len(renderer.render_answer_plus(result))
+
+    def test_answer_plus_shorter_than_full(self):
+        result = _make_result()
+        renderer = MarkdownRenderer()
+        assert len(renderer.render_answer_plus(result)) < len(renderer.render(result))

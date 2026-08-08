@@ -46,9 +46,10 @@ class MarkdownRenderer:
         renderer = MarkdownRenderer()
         md = renderer.render(result)
         md_answer = renderer.render_answer_only(result)
+        md_plus   = renderer.render_answer_plus(result)
     """
 
-    # Synthesis sections shown as a brief 2-line summary rather than full body.
+    # Diagnostic synthesis sections condensed to 2 lines in answer-plus mode.
     _BRIEF_SECTIONS = frozenset({"Quality and Coverage", "Research Gaps", "Limitations"})
 
     @staticmethod
@@ -57,20 +58,58 @@ class MarkdownRenderer:
         non_empty = [ln for ln in body.splitlines() if ln.strip()]
         return "\n".join(non_empty[:max_lines])
 
+    @staticmethod
+    def _source_labels(result: ResearchResult) -> dict[str, str]:
+        """Build source_id → "Title [Publisher]" lookup for citations."""
+        labels: dict[str, str] = {}
+        for src in result.sources:
+            if src.title:
+                lbl = f"{src.title} [{src.publisher}]" if src.publisher else src.title
+            else:
+                lbl = src.source_id
+            labels[src.source_id] = lbl
+        return labels
+
     def render_answer_only(self, result: ResearchResult) -> str:
-        """Render only the synthesized answer sections.
+        """Render only the pure synthesized answer sections.
 
-        Hides all report machinery (status, sources, evidence, claims,
-        quality diagnostics, research gaps, execution trace). The full
-        ResearchResult is unchanged — this is presentation-only.
-
-        Sections "Quality and Coverage", "Research Gaps", and "Limitations"
-        are condensed to at most 2 lines. Citations show the source title
-        instead of the source ID.
+        Shows Summary and Evidence-Derived Claims. Hides all report machinery
+        and all diagnostic synthesis sections (Quality and Coverage, Research
+        Gaps, Limitations, Citations). The full ResearchResult is unchanged.
 
         Returns a non-empty string ending with exactly one newline.
         No trailing whitespace on any line.
         """
+        return self._render_answer_view(
+            result,
+            include_brief_sections=False,
+            include_citations=False,
+        )
+
+    def render_answer_plus(self, result: ResearchResult) -> str:
+        """Render the synthesized answer with brief diagnostic context.
+
+        Shows Summary and Evidence-Derived Claims at full length, followed by
+        Quality and Coverage, Research Gaps, and Limitations condensed to 2
+        lines each, and a Citations block with source titles. Hides all other
+        report machinery. The full ResearchResult is unchanged.
+
+        Returns a non-empty string ending with exactly one newline.
+        No trailing whitespace on any line.
+        """
+        return self._render_answer_view(
+            result,
+            include_brief_sections=True,
+            include_citations=True,
+        )
+
+    def _render_answer_view(
+        self,
+        result: ResearchResult,
+        *,
+        include_brief_sections: bool,
+        include_citations: bool,
+    ) -> str:
         lines: list[str] = []
 
         def blank() -> None:
@@ -79,16 +118,8 @@ class MarkdownRenderer:
         def line(text: str) -> None:
             lines.append(text)
 
-        # Source name lookup: source_id → "Title [Publisher]" or title or id
-        source_label: dict[str, str] = {}
-        for src in result.sources:
-            if src.title:
-                lbl = f"{src.title} [{src.publisher}]" if src.publisher else src.title
-            else:
-                lbl = src.source_id
-            source_label[src.source_id] = lbl
+        source_label = self._source_labels(result) if include_citations else {}
 
-        # Research question as title
         lines.append(f"# {result.request.question}")
         blank()
 
@@ -98,15 +129,15 @@ class MarkdownRenderer:
             blank()
         elif syn.sections:
             for sec in sorted(syn.sections, key=lambda s: s.order):
+                is_brief = sec.title in self._BRIEF_SECTIONS
+                if is_brief and not include_brief_sections:
+                    continue
                 lines.append(f"## {sec.title}")
                 blank()
                 if sec.body:
-                    if sec.title in self._BRIEF_SECTIONS:
-                        line(self._brief_body(sec.body))
-                    else:
-                        line(sec.body)
+                    line(self._brief_body(sec.body) if is_brief else sec.body)
                 blank()
-            if syn.citations:
+            if include_citations and syn.citations:
                 lines.append("## Citations")
                 blank()
                 for cit in syn.citations:

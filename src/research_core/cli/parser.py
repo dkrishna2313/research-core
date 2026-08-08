@@ -108,8 +108,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=False,
         dest="answer_only",
         help=(
-            "Print only the synthesized answer. "
-            "The full research pipeline still executes; only the presentation is reduced. "
+            "Print only the synthesized answer (summary and derived claims). "
+            "Hides quality diagnostics, research gaps, limitations, and citations. "
+            "The full research pipeline still executes. "
+            "Supported with Markdown output only (incompatible with --format json)."
+        ),
+    )
+    run_parser.add_argument(
+        "--answer-plus",
+        action="store_true",
+        default=False,
+        dest="answer_plus",
+        help=(
+            "Print the synthesized answer with brief diagnostic context: "
+            "quality and coverage, research gaps, limitations, and citations with source names. "
+            "Diagnostic sections are condensed to two lines each. "
+            "The full research pipeline still executes. "
             "Supported with Markdown output only (incompatible with --format json)."
         ),
     )
