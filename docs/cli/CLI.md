@@ -45,8 +45,9 @@ research-core run QUESTION [OPTIONS]
 |------|---------|-------------|
 | `--format {markdown,json}` | `markdown` | Output format |
 | `--fixture` | off | Use deterministic in-memory fixture providers |
+| `--knowledge-store PATH` | — | Path to a knowledge_store directory for live retrieval |
 | `--profile PROFILE_ID` | `default` | Profile ID to use |
-| `--web` | off | Enable web evidence providers |
+| `--web` | off | Enable web evidence providers (fixture mode only) |
 | `--strict` | off | Fail on any missing evidence |
 
 **Examples:**
@@ -88,6 +89,23 @@ Fixture mode is useful for:
 - Local development and testing
 - CI pipelines
 - Demonstrating the library without external dependencies
+
+## Live Knowledge mode
+
+`--knowledge-store PATH` wires the real `KnowledgeAdapter` against a local `knowledge_store` directory. Requires the `dc-power-agent` package (`pip install research-core[knowledge]`).
+
+```bash
+research-core run "Sports sponsorship ROI" \
+    --knowledge-store ~/data/knowledge_store
+
+# or via env var
+export RESEARCH_CORE_KNOWLEDGE_STORE=~/data/knowledge_store
+research-core run "Sports sponsorship ROI"
+```
+
+`--fixture` and `--knowledge-store` are mutually exclusive. `--web` is not supported in live knowledge mode.
+
+See [LIVE_KNOWLEDGE.md](LIVE_KNOWLEDGE.md) for the full guide.
 
 ## Exit codes
 

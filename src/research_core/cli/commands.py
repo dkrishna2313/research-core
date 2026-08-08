@@ -12,7 +12,7 @@ import argparse
 from collections.abc import Callable
 from datetime import datetime
 
-from research_core.cli.config import OutputFormat
+from research_core.cli.config import OutputFormat, resolve_knowledge_store, validate_knowledge_store
 from research_core.cli.exit_codes import ExitCode
 from research_core.cli.output import render_result
 
@@ -53,15 +53,49 @@ def run_command(
     fixture_mode: bool = getattr(args, "fixture", False)
     strict_mode: bool = getattr(args, "strict", False)
     profile: str | None = getattr(args, "profile", None)
+    knowledge_store_arg: str | None = getattr(args, "knowledge_store", None)
 
-    # 3. Build engine
+    # 3. Resolve knowledge store path (CLI arg wins over env var)
+    knowledge_store_path = resolve_knowledge_store(knowledge_store_arg)
+
+    # 4. Conflict detection
+    if fixture_mode and knowledge_store_path is not None:
+        return (
+            ExitCode.CONFIGURATION_FAILURE,
+            "",
+            (
+                "error: --fixture and --knowledge-store are mutually exclusive.\n"
+                "Use --fixture for deterministic in-memory providers or\n"
+                "--knowledge-store PATH for live Knowledge Layer execution.\n"
+            ),
+        )
+
+    if knowledge_store_path is not None and use_web:
+        return (
+            ExitCode.CONFIGURATION_FAILURE,
+            "",
+            (
+                "error: --web is not supported in live knowledge mode.\n"
+                "Remove --web, or use --fixture --web for fixture-based web retrieval.\n"
+            ),
+        )
+
+    # 5. Build engine
     if fixture_mode:
         from research_core.cli.providers import build_fixture_engine
 
         engine = build_fixture_engine(use_web=use_web, clock=clock)
+
+    elif knowledge_store_path is not None:
+        err = validate_knowledge_store(knowledge_store_path)
+        if err is not None:
+            return ExitCode.CONFIGURATION_FAILURE, "", f"error: {err}\n"
+
+        from research_core.cli.providers import build_live_knowledge_engine
+
+        engine = build_live_knowledge_engine(knowledge_store_path, clock=clock)
+
     else:
-        # Without --fixture and without external configuration, the CLI cannot
-        # construct production providers. Instruct the user to use --fixture.
         return (
             ExitCode.CONFIGURATION_FAILURE,
             "",
@@ -69,10 +103,12 @@ def run_command(
                 "error: no provider configuration available.\n"
                 "Use --fixture to run with deterministic in-memory providers:\n"
                 "  research-core run QUESTION --fixture\n"
+                "Or use --knowledge-store PATH to run against a Knowledge Layer store:\n"
+                "  research-core run QUESTION --knowledge-store /path/to/knowledge_store\n"
             ),
         )
 
-    # 4. Build request
+    # 6. Build request
     from research_core.contracts.request import ResearchRequest
     from research_core.exceptions import InvalidResearchRequestError
 
@@ -87,7 +123,7 @@ def run_command(
     except InvalidResearchRequestError as exc:
         return ExitCode.INVALID_REQUEST, "", f"error: {exc}\n"
 
-    # 5. Run engine
+    # 7. Run engine
     from research_core.exceptions import (
         IncompleteResearchError,
         ProviderExecutionError,
@@ -117,7 +153,7 @@ def run_command(
             f"error: unexpected failure during research execution — {type(exc).__name__}\n",
         )
 
-    # 6. Render output
+    # 8. Render output
     try:
         output = render_result(result, fmt)
     except Exception as exc:  # noqa: BLE001

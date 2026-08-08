@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "research-core"
-version = "0.8.0"
-description = "Domain-neutral research library with standalone CLI — RC8"
+version = "0.8.1"
+description = "Domain-neutral research library with standalone CLI — RC8.1"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 classifiers = [

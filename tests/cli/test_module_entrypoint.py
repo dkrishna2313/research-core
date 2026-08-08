@@ -17,7 +17,7 @@ class TestModuleEntrypoint:
             text=True,
         )
         assert result.returncode == 0
-        assert "0.8.0" in result.stdout
+        assert "0.8.1" in result.stdout
 
     def test_module_help_exits_zero(self):
         result = subprocess.run(

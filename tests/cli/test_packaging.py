@@ -13,12 +13,12 @@ import pytest
 class TestVersion:
     def test_package_version_is_0_8_0(self):
         meta = importlib.metadata.metadata("research-core")
-        assert meta["Version"] == "0.8.0"
+        assert meta["Version"] == "0.8.1"
 
     def test_init_version_matches(self):
         import research_core
 
-        assert research_core.__version__ == "0.8.0"
+        assert research_core.__version__ == "0.8.1"
 
     def test_version_consistent(self):
         import research_core
@@ -63,7 +63,7 @@ class TestConsoleScript:
             capture_output=True,
             text=True,
         )
-        assert "0.8.0" in result.stdout
+        assert "0.8.1" in result.stdout
 
     def test_research_core_run_fixture(self):
         result = subprocess.run(
