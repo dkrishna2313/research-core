@@ -48,12 +48,25 @@ class MarkdownRenderer:
         md_answer = renderer.render_answer_only(result)
     """
 
+    # Synthesis sections shown as a brief 2-line summary rather than full body.
+    _BRIEF_SECTIONS = frozenset({"Quality and Coverage", "Research Gaps", "Limitations"})
+
+    @staticmethod
+    def _brief_body(body: str, max_lines: int = 2) -> str:
+        """Return at most max_lines non-empty lines from body."""
+        non_empty = [ln for ln in body.splitlines() if ln.strip()]
+        return "\n".join(non_empty[:max_lines])
+
     def render_answer_only(self, result: ResearchResult) -> str:
         """Render only the synthesized answer sections.
 
         Hides all report machinery (status, sources, evidence, claims,
         quality diagnostics, research gaps, execution trace). The full
         ResearchResult is unchanged — this is presentation-only.
+
+        Sections "Quality and Coverage", "Research Gaps", and "Limitations"
+        are condensed to at most 2 lines. Citations show the source title
+        instead of the source ID.
 
         Returns a non-empty string ending with exactly one newline.
         No trailing whitespace on any line.
@@ -65,6 +78,15 @@ class MarkdownRenderer:
 
         def line(text: str) -> None:
             lines.append(text)
+
+        # Source name lookup: source_id → "Title [Publisher]" or title or id
+        source_label: dict[str, str] = {}
+        for src in result.sources:
+            if src.title:
+                lbl = f"{src.title} [{src.publisher}]" if src.publisher else src.title
+            else:
+                lbl = src.source_id
+            source_label[src.source_id] = lbl
 
         # Research question as title
         lines.append(f"# {result.request.question}")
@@ -79,18 +101,18 @@ class MarkdownRenderer:
                 lines.append(f"## {sec.title}")
                 blank()
                 if sec.body:
-                    line(sec.body)
+                    if sec.title in self._BRIEF_SECTIONS:
+                        line(self._brief_body(sec.body))
+                    else:
+                        line(sec.body)
                 blank()
             if syn.citations:
                 lines.append("## Citations")
                 blank()
                 for cit in syn.citations:
                     label = cit.label or cit.citation_id
-                    line(
-                        f"{label} claim:`{cit.claim_id}` "
-                        f"evidence:`{cit.evidence_id}` "
-                        f"source:`{cit.source_id}`"
-                    )
+                    src_name = source_label.get(cit.source_id, cit.source_id)
+                    line(f"{label} {src_name}")
                 blank()
         else:
             # Legacy synthesis without structured sections

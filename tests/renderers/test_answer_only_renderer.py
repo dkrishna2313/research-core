@@ -110,8 +110,17 @@ class TestRenderAnswerOnlyCitations:
         if result.synthesis and result.synthesis.citations:
             out = MarkdownRenderer().render_answer_only(result)
             assert "## Citations" in out
-            first_cit = result.synthesis.citations[0]
-            assert first_cit.claim_id in out
+
+    def test_citations_show_source_title_not_id(self):
+        result = _make_result()
+        if result.synthesis and result.synthesis.citations and result.sources:
+            out = MarkdownRenderer().render_answer_only(result)
+            # Source title must appear; raw source_id must not appear in citations block
+            src = result.sources[0]
+            if src.title:
+                assert src.title in out
+            # Raw source_id format (backtick-wrapped) must not appear
+            assert f"source:`{src.source_id}`" not in out
 
 
 @pytest.mark.renderers
