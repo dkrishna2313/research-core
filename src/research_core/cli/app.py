@@ -40,6 +40,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             sys.stderr.write(stderr_content)
         return exit_code
 
+    if args.command == "history":
+        from research_core.cli.commands import history_command
+
+        exit_code, stdout_content, stderr_content = history_command(args)
+        if stdout_content:
+            sys.stdout.write(stdout_content)
+        if stderr_content:
+            sys.stderr.write(stderr_content)
+        return exit_code
+
     # Unknown subcommand (should not happen with argparse, but be defensive)
     sys.stderr.write(f"error: unknown command {args.command!r}\n")
     return ExitCode.USAGE_ERROR

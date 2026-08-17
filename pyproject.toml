@@ -24,6 +24,9 @@ dependencies = []
 # The research_core.adapters.knowledge module is importable without this extra,
 # but KnowledgeAdapter.retrieve() will raise ProviderUnavailableError at runtime.
 knowledge = ["dc-power-agent"]
+# Install anthropic to enable LLMSynthesizer (Claude-backed summary generation).
+# Without this extra, the engine falls back to DeterministicSynthesizer automatically.
+llm = ["anthropic>=0.20"]
 # Install web extra to enable WebSearchAdapter (DuckDuckGo + page fetching).
 # HTML extraction requires trafilatura; PDF requires pypdf; DOCX requires python-docx.
 # All are optional at the module level — missing deps raise ProviderUnavailableError.
@@ -84,6 +87,11 @@ packages = ["research_core"]
 # knowledge (dc-power-agent) is an optional dependency with no bundled stubs.
 # Imports from it are guarded by TYPE_CHECKING or lazy runtime imports.
 module = ["knowledge", "knowledge.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# anthropic is an optional dependency; TYPE_CHECKING guard in llm.py.
+module = ["anthropic", "anthropic.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

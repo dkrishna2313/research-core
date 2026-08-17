@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         SynthesisStatus,
     )
     from research_core.synthesis.deterministic import DeterministicSynthesizer
+    from research_core.synthesis.llm import LLMSynthesizer
 
 
 def __getattr__(name: str) -> object:
@@ -34,6 +35,9 @@ def __getattr__(name: str) -> object:
             DeterministicSynthesizer as _DS,
         )
         return _DS
+    if name == "LLMSynthesizer":
+        from research_core.synthesis.llm import LLMSynthesizer as _LS
+        return _LS
     if name == "SynthesisConfig":
         from research_core.synthesis.contracts import SynthesisConfig as _SC
         return _SC
@@ -54,6 +58,7 @@ def __getattr__(name: str) -> object:
 
 __all__ = [
     "DeterministicSynthesizer",
+    "LLMSynthesizer",
     "SynthesisConfig",
     "SynthesisCitation",
     "SynthesisDiagnostics",

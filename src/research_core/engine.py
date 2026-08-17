@@ -271,6 +271,7 @@ class ResearchEngine:
                 kr = KnowledgeRetrievalRequest(
                     query=request.question,
                     parent_request=request,
+                    profiles=request.profiles,
                 )
                 k_result = self._knowledge_provider.retrieve(kr)
                 raw_sources.extend(k_result.sources)
@@ -283,6 +284,13 @@ class ResearchEngine:
                         f"from {len(k_result.sources)} source(s)."
                     ),
                 )
+            except UnknownProfileError:
+                _emit(
+                    TraceStage.RETRIEVAL,
+                    TraceEventStatus.FAILED,
+                    "Knowledge retrieval failed: unknown profile.",
+                )
+                raise
             except Exception:
                 _emit(
                     TraceStage.RETRIEVAL,

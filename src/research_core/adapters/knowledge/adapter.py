@@ -20,13 +20,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from research_core.contracts.sources import Source
-from research_core.exceptions import ProviderExecutionError, ProviderUnavailableError
+from research_core.exceptions import ProviderExecutionError, ProviderUnavailableError, UnknownProfileError
 from research_core.protocols.knowledge import KnowledgeRetrievalRequest, KnowledgeRetrievalResult
 
 from .mapping import map_evidence_item, map_source
 
 if TYPE_CHECKING:
     from knowledge.retriever import EvidenceRetriever, RetrievedEvidence
+    from knowledge.store import KnowledgeStore
 
 
 class KnowledgeAdapter:
@@ -51,6 +52,7 @@ class KnowledgeAdapter:
         self._store_root = Path(store_root)
         self._load_sources = load_sources
         self._retriever: EvidenceRetriever | None = None
+        self._store: KnowledgeStore | None = None
 
     @staticmethod
     def is_available() -> bool:
@@ -81,7 +83,7 @@ class KnowledgeAdapter:
 
         try:
             raw_items = self._fetch_items(retriever, request, top_k)
-        except (ProviderUnavailableError, ProviderExecutionError):
+        except (ProviderUnavailableError, ProviderExecutionError, UnknownProfileError):
             raise
         except Exception as exc:
             raise ProviderExecutionError(
@@ -125,6 +127,7 @@ class KnowledgeAdapter:
 
             try:
                 store = KnowledgeStore(root=self._store_root)
+                self._store = store
                 self._retriever = EvidenceRetriever(store=store)
             except Exception as exc:
                 raise ProviderUnavailableError(
@@ -148,6 +151,9 @@ class KnowledgeAdapter:
                 load_sources=self._load_sources,
             )
             return result.items  # type: ignore[no-any-return]
+
+        for profile in profiles:
+            self._assert_profile_exists(profile)
 
         if len(profiles) == 1:
             result = retriever.retrieve(
@@ -188,3 +194,18 @@ class KnowledgeAdapter:
             item.rank = new_rank
 
         return merged
+
+    def _assert_profile_exists(self, profile_id: str) -> None:
+        """Raise UnknownProfileError if no evidence in the store is tagged with profile_id."""
+        store = self._store
+        if store is None:
+            return
+        for domain in store.available_domains():
+            for ev in store.iter_evidence(domain):
+                if profile_id in ev.profile_ids:
+                    return
+        raise UnknownProfileError(
+            profile_id,
+            f"unknown profile {profile_id!r} — not found in knowledge store. "
+            f"Run 'python3 -m knowledge list-profiles' to see available profiles.",
+        )

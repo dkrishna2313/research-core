@@ -20,6 +20,7 @@ class ExitCode(IntEnum):
     EXECUTION_FAILURE   = 6   Pipeline execution failure (incomplete research, etc.).
     OUTPUT_FAILURE      = 7   Rendering or serialization of the result failed.
     CONFIGURATION_FAILURE = 8 CLI is not configured (no providers; use --fixture).
+    HISTORY_FAILURE     = 9   RESEARCH_CORE_HISTORY_DB is not set or DB is unusable.
     """
 
     SUCCESS = 0
@@ -30,3 +31,4 @@ class ExitCode(IntEnum):
     EXECUTION_FAILURE = 6
     OUTPUT_FAILURE = 7
     CONFIGURATION_FAILURE = 8
+    HISTORY_FAILURE = 9

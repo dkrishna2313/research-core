@@ -52,7 +52,12 @@ def _collect_imports(path: Path) -> list[str]:
 @pytest.mark.synthesis
 class TestSynthesisImportBoundaries:
     def test_synthesis_imports_no_llm_sdk(self) -> None:
+        # llm.py is intentionally an LLM integration — skip it here.
+        # Its anthropic import is TYPE_CHECKING-only; the actual import
+        # is lazy inside _get_client() so the module is usable without anthropic installed.
         for py_file in _SYNTHESIS_DIR.glob("*.py"):
+            if py_file.name == "llm.py":
+                continue
             imports = _collect_imports(py_file)
             for prohibited in _PROHIBITED:
                 assert not any(
@@ -71,3 +76,8 @@ class TestSynthesisImportBoundaries:
         from research_core.synthesis import DeterministicSynthesizer
 
         assert DeterministicSynthesizer is not None
+
+    def test_llm_synthesizer_importable(self) -> None:
+        from research_core.synthesis import LLMSynthesizer
+
+        assert LLMSynthesizer is not None

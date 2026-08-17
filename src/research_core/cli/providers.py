@@ -25,6 +25,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from research_core.engine import ResearchEngine
 
+import os
+
 from research_core.fixtures.engine import (
     FIXTURE_CLOCK_TS,
     FIXTURE_PROFILE_IDS,
@@ -52,12 +54,27 @@ class _PassThroughProfileProvider:
         return tuple(self.resolve(pid) for pid in profile_ids)
 
 
+def _build_synthesizer() -> object:
+    """Return LLMSynthesizer when ANTHROPIC_API_KEY is set, DeterministicSynthesizer otherwise."""
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        try:
+            from research_core.synthesis.llm import LLMSynthesizer
+            return LLMSynthesizer()
+        except ImportError:
+            pass
+    from research_core.synthesis import DeterministicSynthesizer
+    return DeterministicSynthesizer()
+
+
 def build_live_knowledge_engine(
     knowledge_store_path: Path,
     *,
     clock: Callable[[], datetime] | None = None,
 ) -> ResearchEngine:
     """Return a ResearchEngine backed by a live KnowledgeAdapter.
+
+    Uses LLMSynthesizer when ANTHROPIC_API_KEY is set; falls back to
+    DeterministicSynthesizer otherwise.
 
     All imports of optional components are deferred to this function body so
     the module can be imported without the knowledge package installed.
@@ -78,7 +95,6 @@ def build_live_knowledge_engine(
     from research_core.engine import ResearchEngine
     from research_core.normalization.normalizer import EvidenceNormalizer
     from research_core.normalization.ranker import EvidenceRanker
-    from research_core.synthesis import DeterministicSynthesizer
 
     return ResearchEngine(
         profile_provider=_PassThroughProfileProvider(),
@@ -87,7 +103,7 @@ def build_live_knowledge_engine(
         evidence_ranker=EvidenceRanker(),
         rc5_claim_extractor=DeterministicClaimExtractor(),
         rc6_gap_analyzer=DeterministicGapAnalyzer(),
-        synthesizer=DeterministicSynthesizer(),
+        synthesizer=_build_synthesizer(),
         clock=clock,
     )
 

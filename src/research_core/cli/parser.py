@@ -127,5 +127,49 @@ def build_parser() -> argparse.ArgumentParser:
             "Supported with Markdown output only (incompatible with --format json)."
         ),
     )
+    run_parser.add_argument(
+        "--no-history",
+        action="store_true",
+        default=False,
+        dest="no_history",
+        help=(
+            "Do not record this query in the history database. "
+            "When omitted, RESEARCH_CORE_HISTORY_DB must be set."
+        ),
+    )
+
+    # --- history subcommand ---
+    history_parser = subparsers.add_parser(
+        "history",
+        help="View or manage past research queries.",
+        description=(
+            "List, inspect, or delete past research queries stored in the history database.\n\n"
+            "Requires RESEARCH_CORE_HISTORY_DB to be set to the path of the SQLite database."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    history_parser.add_argument(
+        "--delete",
+        metavar="QUERY_ID",
+        dest="delete_id",
+        default=None,
+        help=(
+            "Permanently delete a history entry by its full ID or unique short prefix "
+            "(the first 8 characters shown in the history list)."
+        ),
+    )
+    history_parser.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        metavar="N",
+        help="Maximum number of entries to show (default: 20).",
+    )
+    history_parser.add_argument(
+        "--profile",
+        metavar="PROFILE_ID",
+        default=None,
+        help="Filter history to queries that used a specific profile.",
+    )
 
     return parser

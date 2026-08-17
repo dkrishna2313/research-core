@@ -12,7 +12,13 @@ import argparse
 from collections.abc import Callable
 from datetime import datetime
 
-from research_core.cli.config import OutputFormat, resolve_knowledge_store, validate_knowledge_store
+from research_core.cli.config import (
+    HISTORY_DB_ENV,
+    OutputFormat,
+    get_history_db_path,
+    resolve_knowledge_store,
+    validate_knowledge_store,
+)
 from research_core.cli.exit_codes import ExitCode
 from research_core.cli.output import render_result
 
@@ -54,11 +60,23 @@ def run_command(
     strict_mode: bool = getattr(args, "strict", False)
     answer_only: bool = getattr(args, "answer_only", False)
     answer_plus: bool = getattr(args, "answer_plus", False)
+    no_history: bool = getattr(args, "no_history", False)
     profile: str | None = getattr(args, "profile", None)
     knowledge_store_arg: str | None = getattr(args, "knowledge_store", None)
 
     # 3. Resolve knowledge store path (CLI arg wins over env var)
     knowledge_store_path = resolve_knowledge_store(knowledge_store_arg)
+
+    # 3a. Fail fast if history is required but not configured
+    if not no_history and get_history_db_path() is None:
+        return (
+            ExitCode.HISTORY_FAILURE,
+            "",
+            f"error: {HISTORY_DB_ENV} is not set.\n"
+            "Set it to the path for your history database before running queries:\n"
+            f"  export {HISTORY_DB_ENV}=~/.research_core/history.db\n"
+            "Or pass --no-history to skip recording this query.\n",
+        )
 
     # 4. Conflict detection
     if answer_only and answer_plus:
@@ -180,4 +198,62 @@ def run_command(
             f"error: failed to render result — {type(exc).__name__}: {exc}\n",
         )
 
-    return ExitCode.SUCCESS, output, ""
+    # 9. Save to history (non-fatal on failure)
+    history_warning = ""
+    if not no_history:
+        history_db_path = get_history_db_path()
+        if history_db_path is not None:
+            try:
+                from research_core.history.store import HistoryStore
+                HistoryStore(history_db_path).save(result)
+            except Exception as exc:  # noqa: BLE001
+                history_warning = f"warning: failed to save query to history — {exc}\n"
+
+    return ExitCode.SUCCESS, output, history_warning
+
+
+def history_command(args: argparse.Namespace) -> tuple[int, str, str]:
+    """Execute the 'history' subcommand.
+
+    Returns (exit_code, stdout_content, stderr_content).
+    """
+    from research_core.cli.config import HISTORY_DB_ENV, get_history_db_path
+    from research_core.history.store import HistoryStore, format_history_table
+
+    db_path = get_history_db_path()
+    if db_path is None:
+        return (
+            ExitCode.HISTORY_FAILURE,
+            "",
+            f"error: {HISTORY_DB_ENV} is not set.\n"
+            "Set it to the path of your history database:\n"
+            f"  export {HISTORY_DB_ENV}=~/.research_core/history.db\n",
+        )
+
+    try:
+        store = HistoryStore(db_path)
+    except Exception as exc:  # noqa: BLE001
+        return (
+            ExitCode.HISTORY_FAILURE,
+            "",
+            f"error: could not open history database at {db_path} — {exc}\n",
+        )
+
+    delete_id: str | None = getattr(args, "delete_id", None)
+    if delete_id is not None:
+        ok, detail = store.delete(delete_id)
+        if not ok:
+            return ExitCode.USAGE_ERROR, "", f"error: {detail}\n"
+        return ExitCode.SUCCESS, f"Deleted history entry {detail[:8]}.\n", ""
+
+    limit: int = getattr(args, "limit", 20)
+    profile: str | None = getattr(args, "profile", None)
+
+    records = store.list_queries(limit=limit, profile=profile)
+    if not records:
+        msg = "No history entries found"
+        if profile:
+            msg += f" for profile {profile!r}"
+        return ExitCode.SUCCESS, msg + ".\n", ""
+
+    return ExitCode.SUCCESS, format_history_table(records), ""

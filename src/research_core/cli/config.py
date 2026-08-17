@@ -15,6 +15,19 @@ from pathlib import Path
 KNOWLEDGE_STORE_ENV = "RESEARCH_CORE_KNOWLEDGE_STORE"
 """Environment variable that sets the knowledge store path when --knowledge-store is omitted."""
 
+HISTORY_DB_ENV = "RESEARCH_CORE_HISTORY_DB"
+"""Environment variable that sets the path to the SQLite history database.
+
+Must be set when running 'research-core run' unless --no-history is passed.
+Example: export RESEARCH_CORE_HISTORY_DB=~/.research_core/history.db
+"""
+
+
+def get_history_db_path() -> Path | None:
+    """Return the history DB path from the environment variable, or None if unset."""
+    val = os.environ.get(HISTORY_DB_ENV, "").strip()
+    return Path(val) if val else None
+
 
 class OutputFormat(StrEnum):
     """Output format for the run command.
